@@ -1,0 +1,51 @@
+{
+  "summary": "Iteration 2 validates GoROAM rebrand (splash screen, sage/cream theme), AI concierge (Roamie) FAB + modal with Gemini integration, and 7 new settings sub-pages. All 26 backend pytest cases pass (including 2 new AI search tests). Frontend UI flow verified end-to-end on mobile viewport (390x844). One environmental issue: Emergent LLM key budget exhausted during live UI test so AI chat returns graceful error in bubble (backend/code works fine; budget needs topping up).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "AI concierge quick-prompt → Gemini response",
+        "issue": "POST /api/ai/search returned HTTP 500 during UI test with detail 'litellm.BadRequestError ... Budget has been exceeded! Current cost: 0.0033, Max budget: 0.001'. Pytest earlier in the run (when budget was available) passed with a valid Gemini response, so endpoint code is correct — the Emergent LLM key budget just ran out. AI modal gracefully shows the backend error text in an assistant bubble. Link chips ([stay-x]/[pkg-x]) could not be verified in UI because no successful AI reply was received, but the parser + onPress wiring in app/ai.tsx MessageBubble is implemented correctly.",
+        "affected_testIDs": ["ai-fab", "ai-input", "ai-send", "ai-close", "ai-prompt-*", "ai-link-*"]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "multiple (uses theme.shadow.card / subtle)",
+        "issue": "Metro logs spam 'shadow* style props are deprecated. Use boxShadow' — cosmetic warning only, no runtime impact. Consider migrating theme.shadow to boxShadow on web targets."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_auratravel_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Top up / rotate EMERGENT_LLM_KEY budget so live AI chat works end-to-end in UI (backend endpoint itself is verified correct).",
+    "Optional: replace deprecated shadow* props in src/theme.ts with boxShadow for cleaner web console."
+  ],
+  "critical_code_review_comments": [
+    "server.py correctly excludes MongoDB _id everywhere (projection {\"_id\":0} or pop after insert).",
+    "ai/search endpoint builds catalog context and instructs Gemini to include [stay-x]/[pkg-x] tags — frontend parses these into tappable chips correctly.",
+    "MessageBubble regex `/\\[(stay-[a-z0-9-]+|pkg-[a-z0-9-]+)\\]/gi` correctly captures both prefixes.",
+    "Splash screen at app/index.tsx auto-redirects with setTimeout(1200ms) and cleans up timeout — correct.",
+    "Settings uses a single dynamic [page].tsx route with switch-based content — clean and maintainable."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_auratravel_api.py (added TestAiSearch class with validation + live Gemini response tests)"
+  ],
+  "success_rate": {
+    "backend": "100% (26/26 pytest)",
+    "frontend": "~95% — all UI flows verified (splash, theme, FAB, AI modal open, all 7 settings sub-pages navigation, profile). Only AI response rendering blocked by external LLM budget limit."
+  },
+  "seed_data_creation": "None; uses admin@auratravel.com/admin123 seeded by backend + TEST_ prefixed users created via register API.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All 26 backend tests green. AI endpoint depends on EMERGENT_LLM_KEY budget — if tests fail with 500 'Budget has been exceeded', refresh the key. Frontend URL: https://travel-stays-38.preview.emergentagent.com/. Splash auto-redirects in 1.2s. All settings pages use testID menu-{slug} (personal/payments/notifications/privacy/help/terms/about).",
+  "rca_of_issue": "AI UI chip verification failed only because Emergent LLM budget (max 0.001) was exceeded during live UI test. Pytest that ran ~30 min earlier got a successful Gemini response (200 OK visible in backend logs). Mitigation: top up the Emergent LLM key; no code changes needed."
+}

@@ -1,0 +1,148 @@
+{
+  "project_name": "AuraTravel - Premium Stays & Curated Journeys",
+  "theme_archetype": "Organic & Earthy",
+  "theme": "Light",
+  "design_philosophy": "Mobile-first, premium travel booking experience. Prioritizes immersive visual storytelling through large, edge-to-edge imagery. Uses generous spacing and subtle tactile surfaces rather than flat digital shapes. 'Book My Trip' packages must feel like curated editorial articles rather than generic product listings.",
+  "colors": {
+    "background": {
+      "default": "#FDFCF8",
+      "surface": "#FFFFFF",
+      "muted": "#F3F1EC",
+      "glass": "rgba(255, 255, 255, 0.85)"
+    },
+    "text": {
+      "primary": "#1C1917",
+      "secondary": "#57534E",
+      "tertiary": "#A8A29E",
+      "inverse": "#FFFFFF"
+    },
+    "brand": {
+      "primary": "#B94C36",
+      "primary_hover": "#9E412E",
+      "secondary": "#27342B",
+      "accent": "#DCA74E"
+    },
+    "status": {
+      "success": "#3B5A42",
+      "warning": "#DCA74E",
+      "error": "#B94C36"
+    },
+    "border": {
+      "light": "rgba(28, 25, 23, 0.08)",
+      "medium": "rgba(28, 25, 23, 0.15)",
+      "dark": "rgba(28, 25, 23, 0.3)"
+    }
+  },
+  "typography": {
+    "fonts": {
+      "heading": "'Outfit', sans-serif",
+      "body": "'Manrope', sans-serif"
+    },
+    "scale": {
+      "h1": "text-4xl sm:text-5xl tracking-tight font-medium",
+      "h2": "text-2xl sm:text-3xl tracking-tight font-medium",
+      "h3": "text-xl sm:text-2xl font-medium",
+      "h4": "text-lg font-medium",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm text-secondary",
+      "overline": "text-xs uppercase tracking-[0.15em] font-bold text-secondary"
+    },
+    "instructions": "Import Google Fonts: Outfit (300,400,500,600) and Manrope (300,400,500,600). Never use generic sans-serif for headings."
+  },
+  "spacing_and_layout": {
+    "philosophy": "Generous spacing. Mobile screens should feel breathable.",
+    "container_padding": "px-4 sm:px-6 md:px-8",
+    "section_gap": "gap-12 md:gap-20",
+    "item_gap": "gap-4 md:gap-6",
+    "border_radius": {
+      "small": "rounded-md",
+      "medium": "rounded-xl",
+      "large": "rounded-2xl",
+      "full": "rounded-full"
+    },
+    "shadows": {
+      "subtle": "shadow-[0_2px_10px_rgba(28,25,23,0.04)]",
+      "floating": "shadow-[0_8px_30px_rgba(28,25,23,0.08)]",
+      "glass": "shadow-[0_4px_24px_rgba(0,0,0,0.06)]"
+    }
+  },
+  "components": {
+    "bottom_navigation": {
+      "style": "Fixed at bottom, glassmorphism (backdrop-blur-xl bg-white/85), border-t border-border/light. Ensure pb-24 on main content wrapper to prevent overlap.",
+      "icons": "lucide-react icons, size 24. Active state: brand.primary, Inactive: text.tertiary. Text label is text-[10px] font-medium."
+    },
+    "cards_stay": {
+      "layout": "Vertical stack. Image at top (aspect-square or 4/3) with rounded-2xl. Content below image, left-aligned.",
+      "image_container": "Relative positioning. Wishlist heart icon absolute top-3 right-3, size 20, white stroke or brand.primary fill if active. Add subtle bottom gradient overlay if text sits on image.",
+      "text_content": "Title (h4), Location (small), Price per night (font-medium text-primary), Rating (flex row with star icon). No card background color or border - rely on image boundaries."
+    },
+    "cards_package": {
+      "layout": "Horizontal row for featured, or large vertical card. Aspect ratio 3/4 for image. Feels like an editorial poster.",
+      "text_content": "Destination (h3), Duration badge (e.g., '3N/4D' using overline style), Base Price. 'View Itinerary' CTA."
+    },
+    "buttons": {
+      "primary": "bg-brand.primary text-white rounded-full px-6 py-3 font-medium hover:bg-brand.primary_hover transition-colors active:scale-95",
+      "secondary": "bg-white text-primary border border-border/medium rounded-full px-6 py-3 font-medium hover:bg-background.muted",
+      "ghost": "text-primary hover:bg-background.muted rounded-full px-4 py-2"
+    },
+    "search_bar": {
+      "style": "Sticky top, floating pill shape. bg-white floating shadow, rounded-full px-4 py-3 flex items-center gap-3."
+    },
+    "booking_bar": {
+      "style": "Fixed bottom (above nav on mobile, or replaces nav on detail pages). Glassmorphism surface, flex justify-between items-center px-4 py-4 border-t border-border/light. Price on left, 'Reserve' primary button on right."
+    },
+    "tabs": {
+      "style": "Custom scrollable horizontal list. Active tab has black bottom border or black pill background. Inactive is text-secondary."
+    }
+  },
+  "page_blueprints": {
+    "home": {
+      "structure": "1. Floating Search Header. 2. Category Tabs (Stays vs Packages). 3. Featured Horizontal Scroll (Stays). 4. Curated 'Book My Trip' Collections (Vertical list).",
+      "details": "Use Framer Motion for smooth tab switching. Packages should stand out visually from stays (e.g., taller aspect ratio for packages)."
+    },
+    "explore_listings": {
+      "structure": "Grid of cards. 1 column on mobile, 2 on tablet, 3-4 on desktop.",
+      "filters": "Scrollable pill buttons below search bar (e.g., 'Beachfront', 'Cabins', 'Trending')."
+    },
+    "detail_stay": {
+      "structure": "1. Hero Image Gallery (Swipeable carousel). 2. Title & Ratings. 3. Host Info Row (Avatar + Text). 4. Separator line. 5. Amenities Grid. 6. Calendar/Date Picker inline. 7. Sticky Booking Bottom Bar.",
+      "details": "Use embla-carousel for images. Calendar uses Shadcn Calendar."
+    },
+    "detail_package": {
+      "structure": "1. Cinematic Hero Image (edge-to-edge). 2. Title & Duration. 3. Itinerary Accordions (Day 1, Day 2). 4. Inclusions/Exclusions list with check/x icons. 5. Sticky Booking Bottom Bar."
+    },
+    "profile_and_auth": {
+      "structure": "Clean, minimal forms. Use Shadcn Form, Input, Button. High padding, centered layout for Auth."
+    }
+  },
+  "media": {
+    "images": {
+      "hero_essentials": {
+        "url": "https://static.prod-images.emergentagent.com/jobs/b2ca5880-2dc3-4cdc-96c9-ed68b55a540b/images/e66d7ca0df99271d0f7bdec1d483eec81afcc8d4c33c6558517143bc65344f1a.png",
+        "description": "Premium flat-lay of travel essentials. Use for Auth screen background, profile headers, or empty states."
+      },
+      "kerala_backwaters": [
+        "https://images.pexels.com/photos/35080149/pexels-photo-35080149.jpeg",
+        "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?crop=entropy&cs=srgb&fm=jpg"
+      ],
+      "himalayas": [
+        "https://images.pexels.com/photos/28689395/pexels-photo-28689395.jpeg",
+        "https://images.unsplash.com/photo-1645033393637-9089ab100756?crop=entropy&cs=srgb&fm=jpg"
+      ],
+      "rajasthan_palace": [
+        "https://images.pexels.com/photos/570031/pexels-photo-570031.jpeg",
+        "https://images.unsplash.com/photo-1601571574713-349e4e867fa6?crop=entropy&cs=srgb&fm=jpg"
+      ],
+      "luxury_resorts": [
+        "https://images.pexels.com/photos/33726144/pexels-photo-33726144.jpeg",
+        "https://images.unsplash.com/photo-1694366454450-7979697bab21?crop=entropy&cs=srgb&fm=jpg",
+        "https://images.unsplash.com/photo-1695124565997-6f6552b1edb2?crop=entropy&cs=srgb&fm=jpg"
+      ]
+    },
+    "instructions": "Use these images exactly as provided. Map them to 'Stays' (luxury_resorts) and 'Packages' (kerala, himalayas, rajasthan). Do not use placeholder images."
+  },
+  "testing": {
+    "attributes": "Add data-testid attributes to all interactive elements (buttons, inputs, tabs, cards). Example: data-testid='tab-stays', data-testid='book-now-button'."
+  },
+  "implementation_notes": "Use lucide-react for all iconography. Use Shadcn UI for structured components (Dialog, Calendar, Popover, Input) but strip heavy borders and shadows to match the 'Organic & Earthy' premium feel. Ensure the app is entirely usable via mobile dimensions (max-w-md mx-auto or responsive grids that scale up gracefully)."
+}
