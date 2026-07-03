@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import loginBack from "../assets/loginback.jpg";
 
 type Step = "LOGIN" | "REGISTER";
 
@@ -46,26 +48,80 @@ const Login = () => {
         confirm_password: "",
     });
 
+    const { verifyVendor } = useAuth();
+
+    useEffect(() => {
+        const checkExistingSession = async () => {
+            try {
+                // Check if session cookie is valid
+                await verifyVendor();
+                // Get onboarding status
+                const { data } = await axios.get(
+                    `${backendUrl}/api/vendor/setup-status`,
+                    {
+                        withCredentials: true,
+                    }
+                );
+                if (data.success) {
+                    navigate(data.redirect, { replace: true });
+                }
+            } catch (error) {
+                // No valid session, stay on login page
+            }
+        };
+        checkExistingSession();
+    }, []);
+
     const handleLogin = async () => {
         if (!loginData.email || !loginData.password) {
             toast.error("All fields are required");
             return;
         }
+
         try {
             setLoading(true);
-            const { data } = await axios.post(`${backendUrl}/api/vendor/login`, loginData, {
-                withCredentials: true,
-            });
+
+            const { data } = await axios.post(
+                `${backendUrl}/api/vendor/login`,
+                loginData,
+                {
+                    withCredentials: true,
+                }
+            );
+
             toast.success(data.message);
+
+            // Update AuthContext
+            await verifyVendor();
+
+            // Fetch setup status
+            const { data: setupData } = await axios.get(
+                `${backendUrl}/api/vendor/setup-status`,
+                {
+                    withCredentials: true,
+                }
+            );
+
+            navigate(setupData.redirect);
+
         } catch (error: any) {
-            toast.error(error.response?.data?.message || "Login failed");
+            toast.error(
+                error.response?.data?.message || "Login failed"
+            );
         } finally {
             setLoading(false);
         }
     };
 
     const handleRegister = async () => {
-        const { first_name, last_name, email, phone, password, confirm_password } = registerData;
+        const {
+            first_name,
+            last_name,
+            email,
+            phone,
+            password,
+            confirm_password,
+        } = registerData;
         if (!first_name || !last_name || !email || !phone || !password) {
             toast.error("All fields are required");
             return;
@@ -74,18 +130,35 @@ const Login = () => {
             toast.error("Passwords do not match");
             return;
         }
-
         try {
             setLoading(true);
             const { data } = await axios.post(
                 `${backendUrl}/api/vendor/register`,
-                { ...registerData, country_code: "+91" },
-                { withCredentials: true }
+                {
+                    ...registerData,
+                    country_code: "+91",
+                },
+                {
+                    withCredentials: true,
+                }
             );
             toast.success(data.message);
-            navigate("/vendor/address");
+            // Update Auth Context (verify session)
+            await verifyVendor();
+            // Fetch current onboarding step
+            const { data: setupData } = await axios.get(
+                `${backendUrl}/api/vendor/setup-status`,
+                {
+                    withCredentials: true,
+                }
+            );
+            // Redirect to the correct page returned by backend
+            // navigate(setupData.redirect);
+            setStep("LOGIN");
         } catch (error: any) {
-            toast.error(error.response?.data?.message || "Registration failed");
+            toast.error(
+                error.response?.data?.message || "Registration failed"
+            );
         } finally {
             setLoading(false);
         }
@@ -93,9 +166,13 @@ const Login = () => {
 
     return (
         <div
+            // className="relative min-h-screen w-full flex items-center justify-center p-4 overflow-hidden"
             className="relative min-h-screen w-full flex items-center justify-center p-4 overflow-hidden"
             style={{
-                background: "#F5F2EA",
+                // 2. Apply the image as a background
+                backgroundImage: `url(${loginBack})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
                 fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif",
             }}
         >
@@ -106,12 +183,13 @@ const Login = () => {
       `}</style>
 
             {/* Background texture */}
-            <div className="absolute inset-0 grid grid-cols-4 md:grid-cols-6 gap-2 opacity-20 blur-[1px] pointer-events-none">
+            {/* <div className="absolute inset-0  opacity-20 blur-[100px] pointer-events-none">
                 {[...Array(24)].map((_, i) => (
                     <div key={i} className="bg-[#E5DECF] rounded-xl aspect-[4/3]" />
                 ))}
-            </div>
-
+            </div> */}
+            {/* Background texture with adjusted opacity */}
+            <div className="absolute inset-0 bg-[#F5F2EA]/30 backdrop-blur-[2px]" />
             {/* Modal */}
             <div className="relative z-10 w-full max-w-[520px] bg-white rounded-2xl shadow-2xl border border-[#E5DECF] overflow-hidden">
                 <div className="relative flex items-center justify-center py-5 border-b border-[#EFE9DC]">
