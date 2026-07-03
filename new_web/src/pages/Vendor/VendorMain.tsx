@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Outlet, NavLink } from "react-router-dom";
 import {
   Menu,
@@ -20,143 +20,150 @@ const VendorMain = () => {
   const menuItems = [
     {
       title: "Dashboard",
-      icon: <LayoutDashboard size={20} />,
+      icon: LayoutDashboard,
       path: "/vendor/dashboard",
     },
     {
       title: "Hotel Address",
-      icon: <MapPinned size={20} />,
+      icon: MapPinned,
       path: "/vendor/address",
     },
     {
       title: "Hotels",
-      icon: <Building2 size={20} />,
+      icon: Building2,
       path: "/vendor/hotels",
     },
     {
       title: "Bookings",
-      icon: <CalendarCheck size={20} />,
+      icon: CalendarCheck,
       path: "/vendor/bookings",
     },
     {
       title: "Customers",
-      icon: <Users size={20} />,
+      icon: Users,
       path: "/vendor/customers",
     },
     {
       title: "Reviews",
-      icon: <Star size={20} />,
+      icon: Star,
       path: "/vendor/reviews",
     },
     {
       title: "Settings",
-      icon: <Settings size={20} />,
+      icon: Settings,
       path: "/vendor/settings",
     },
   ];
 
   return (
-    <div className="d-flex vh-100 bg-light">
+    <div className="flex min-h-screen bg-gray-100">
 
       {/* Sidebar */}
       <aside
-        className={`bg-dark text-white d-flex flex-column ${sidebarOpen ? "p-3" : "p-2"
-          }`}
-        style={{
-          width: sidebarOpen ? "250px" : "75px",
-          transition: "0.3s",
-        }}
+        className={`bg-slate-900 text-white transition-all duration-300 flex flex-col ${
+          sidebarOpen ? "w-64" : "w-20"
+        }`}
       >
-        <div className="d-flex justify-content-between align-items-center mb-4">
+        <div className="flex items-center justify-between p-5 border-b border-slate-800">
           {sidebarOpen && (
-            <h4 className="fw-bold m-0 text-warning">
+            <h2 className="text-xl font-bold text-amber-400">
               Hotel Vendor
-            </h4>
+            </h2>
           )}
 
           <button
-            className="btn btn-sm btn-outline-light"
             onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded-lg hover:bg-slate-800"
           >
-            <Menu size={18} />
+            <Menu size={20} />
           </button>
         </div>
 
-        <div className="flex-grow-1">
-          {menuItems.map((item, index) => (
-            <NavLink
-              key={index}
-              to={item.path}
-              className={({ isActive }) =>
-                `d-flex align-items-center text-decoration-none mb-2 rounded px-3 py-2 ${isActive
-                  ? "bg-warning text-dark"
-                  : "text-white"
-                }`
-              }
-            >
-              <span style={{ fontSize: 20 }}>{item.icon}</span>
+        <nav className="flex-1 p-3 space-y-2">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
 
-              {sidebarOpen && (
-                <span className="ms-3">{item.title}</span>
-              )}
-            </NavLink>
-          ))}
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
+                  `flex items-center rounded-xl px-4 py-3 transition-all ${
+                    isActive
+                      ? "bg-amber-400 text-slate-900 font-semibold"
+                      : "hover:bg-slate-800"
+                  }`
+                }
+              >
+                <Icon size={20} />
+
+                {sidebarOpen && (
+                  <span className="ml-4">
+                    {item.title}
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        <div className="p-3 border-t border-slate-800">
+          <button className="flex w-full items-center justify-center rounded-xl bg-red-600 py-3 hover:bg-red-700 transition">
+            <LogOut size={18} />
+
+            {sidebarOpen && (
+              <span className="ml-2">
+                Logout
+              </span>
+            )}
+          </button>
         </div>
-
-        <button className="btn btn-danger w-100 mt-3">
-          <LogOut size={18} className="me-2" />
-          {sidebarOpen && "Logout"}
-        </button>
       </aside>
 
       {/* Main */}
-      <div className="flex-grow-1 d-flex flex-column">
+      <div className="flex flex-1 flex-col">
 
-        {/* Top Navbar */}
-        <header
-          className="bg-white shadow-sm px-4 py-3 d-flex justify-content-between align-items-center"
-        >
-          <h4 className="fw-bold m-0">
+        {/* Navbar */}
+        <header className="flex h-16 items-center justify-between border-b bg-white px-8 shadow-sm">
+
+          <h1 className="text-2xl font-bold text-slate-800">
             Vendor Dashboard
-          </h4>
+          </h1>
 
-          <div className="d-flex align-items-center gap-4">
+          <div className="flex items-center gap-6">
 
-            <Bell size={22} />
+            <button className="relative">
+              <Bell
+                size={22}
+                className="text-slate-600"
+              />
 
-            <div className="d-flex align-items-center">
-              <div
-                className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-                style={{
-                  width: 40,
-                  height: 40,
-                }}
-              >
+              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500"></span>
+            </button>
+
+            <div className="flex items-center gap-3">
+
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white">
                 <UserCircle2 size={22} />
               </div>
 
-              <div className="ms-2">
-                <div className="fw-semibold">
+              <div>
+                <h4 className="font-semibold text-slate-800">
                   John Doe
-                </div>
+                </h4>
 
-                <small className="text-muted">
+                <p className="text-sm text-gray-500">
                   Vendor
-                </small>
+                </p>
               </div>
+
             </div>
 
           </div>
         </header>
 
         {/* Content */}
-        <main
-          className="p-4"
-          style={{
-            overflowY: "auto",
-            flex: 1,
-          }}
-        >
+        <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>
 

@@ -97,6 +97,7 @@ const App = () => {
         </Route>
         <Route path="/vendor/address" element={<AddressPage />} />
         <Route path="/vendor/listing" element={<CompleteListing />} />
+        <Route path="/vendor/main" element={<VendorMain/>} />
 
 
 

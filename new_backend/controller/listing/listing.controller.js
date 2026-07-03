@@ -1,5 +1,5 @@
 import pool from "../../config/db.js";
-
+import { deleteOldRooms, saveCompleteRoom, updateListingProgress, updatePropertyPriceRange, validateRooms } from "../../services/rooms.service.js";
 
 export const getIncompleteListing = async (req, res) => {
     try {
@@ -24,64 +24,76 @@ export const getIncompleteListing = async (req, res) => {
         }
         const progress = progressRows[0];
         const propertyId = progress.property_id;
+
         // Property
         const [property] = await pool.execute(
-            `SELECT *
-             FROM properties
-             WHERE id=?`,
+            `SELECT * FROM properties WHERE id=?`,
             [propertyId]
         );
         // Address
         const [address] = await pool.execute(
-            `SELECT *
-             FROM property_addresses
-             WHERE property_id=?`,
+            `SELECT * FROM property_addresses WHERE property_id=?`,
             [propertyId]
         );
         // Images
         const [images] = await pool.execute(
-            `SELECT *
-             FROM property_images
-             WHERE property_id=?
-             ORDER BY sort_order ASC`,
+            `SELECT * FROM property_images WHERE property_id=? ORDER BY sort_order ASC`,
             [propertyId]
         );
         // Amenities
         const [amenities] = await pool.execute(
-            `
-            SELECT amenity_id
-            FROM property_amenities
-            WHERE property_id=?
-            `,
+            `SELECT amenity_id FROM property_amenities WHERE property_id=?`,
             [propertyId]
-
         );
         // Policies
         const [policies] = await pool.execute(
-            `
-            SELECT *
-            FROM property_policies
-            WHERE property_id=?
-            `,
+            `SELECT * FROM property_policies WHERE property_id=?`,
             [propertyId]
         );
         // Rules
         const [rules] = await pool.execute(
+            `SELECT * FROM property_rules WHERE property_id=?`,
+            [propertyId]
+        );
+
+        // Rooms (base rows + price)
+        const [roomRows] = await pool.execute(
             `
-            SELECT *
-            FROM property_rules
-            WHERE property_id=?
+            SELECT r.*, rp.price, rp.weekend_price, rp.extra_guest_price, rp.tax
+            FROM rooms r
+            LEFT JOIN room_prices rp ON rp.room_id = r.id
+            WHERE r.property_id = ?
+            ORDER BY r.id ASC
             `,
             [propertyId]
         );
-        // Rooms
-        const [rooms] = await pool.execute(
-            `
-            SELECT *
-            FROM rooms
-            WHERE property_id=?            `,
-            [propertyId]
-        );
+
+        let rooms = [];
+
+        if (roomRows.length > 0) {
+            const roomIds = roomRows.map((r) => r.id);
+            const placeholders = roomIds.map(() => "?").join(",");
+
+            const [beds] = await pool.query(
+                `SELECT * FROM room_beds WHERE room_id IN (${placeholders})`,
+                roomIds
+            );
+            const [dormBeds] = await pool.query(
+                `SELECT * FROM room_dorm_beds WHERE room_id IN (${placeholders})`,
+                roomIds
+            );
+            const [roomImages] = await pool.query(
+                `SELECT * FROM room_images WHERE room_id IN (${placeholders}) ORDER BY sort_order ASC`,
+                roomIds
+            );
+
+            rooms = roomRows.map((room) => ({
+                ...room,
+                beds: beds.filter((b) => b.room_id === room.id),
+                dorm_beds: dormBeds.filter((b) => b.room_id === room.id),
+                images: roomImages.filter((i) => i.room_id === room.id)
+            }));
+        }
 
         return res.json({
             success: true,
@@ -98,6 +110,7 @@ export const getIncompleteListing = async (req, res) => {
             rooms
         });
     } catch (error) {
+        console.log(error)
         return res.status(500).json({
             success: false,
             message: error.message
@@ -833,6 +846,152 @@ export const savePoliciesAndRules = async (req, res) => {
         });
     } catch (error) {
         await connection.rollback();
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    } finally {
+        connection.release();
+    }
+};
+
+
+
+
+export const saveRooms = async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const { property_id } = req.body;
+        if (!property_id) {
+            return res.status(400).json({ success: false, message: "Property ID is required." });
+        }
+
+        let rooms;
+        try {
+            rooms = JSON.parse(req.body.rooms);
+        } catch {
+            return res.status(400).json({ success: false, message: "Invalid rooms data." });
+        }
+
+        validateRooms(rooms);
+
+        // group uploaded files by room index (fieldname: room_<idx>_images)
+        const filesByRoom = {};
+        (req.files || []).forEach((file) => {
+            const match = file.fieldname.match(/^room_(\d+)_images$/);
+            if (match) {
+                const idx = Number(match[1]);
+                (filesByRoom[idx] ||= []).push(file);
+            }
+        });
+
+        await connection.beginTransaction();
+        await deleteOldRooms(connection, property_id);
+
+        for (let i = 0; i < rooms.length; i++) {
+            rooms[i].images = filesByRoom[i] || [];
+            await saveCompleteRoom(connection, property_id, rooms[i]);
+        }
+
+        await updatePropertyPriceRange(connection, property_id);
+        await updateListingProgress(connection, property_id);
+        await connection.commit();
+
+        res.json({ success: true, message: "Rooms saved successfully." });
+    } catch (error) {
+        await connection.rollback();
+        console.error(error);
+        res.status(500).json({ success: false, message: error.message || "Unable to save rooms." });
+    } finally {
+        connection.release();
+    }
+};
+
+
+
+export const publishListing = async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const vendorId = req.vendor.id;
+        const { property_id } = req.body;
+
+        if (!property_id) {
+            return res.status(422).json({
+                success: false,
+                message: "Property ID is required."
+            });
+        }
+
+        await connection.beginTransaction();
+
+        // Ownership check — don't let a vendor publish someone else's property
+        const [propertyRows] = await connection.execute(
+            `SELECT id, vendor_id FROM properties WHERE id=?`,
+            [property_id]
+        );
+        if (propertyRows.length === 0 || propertyRows[0].vendor_id !== vendorId) {
+            await connection.rollback();
+            return res.status(404).json({
+                success: false,
+                message: "Property not found."
+            });
+        }
+
+        // Optional but recommended: verify every step was actually completed
+        const [progressRows] = await connection.execute(
+            `SELECT progress FROM property_listing_progress WHERE property_id=?`,
+            [property_id]
+        );
+        if (progressRows.length === 0) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: "No listing progress found for this property."
+            });
+        }
+
+        const progress = JSON.parse(progressRows[0].progress || "{}");
+        const requiredSteps = [
+            "basic_info", "location", "photos",
+            "amenities", "policies", "rules", "rooms"
+        ];
+        const missing = requiredSteps.filter((k) => !progress[k]);
+        if (missing.length > 0) {
+            await connection.rollback();
+            return res.status(422).json({
+                success: false,
+                message: `Please complete: ${missing.join(", ")} before publishing.`
+            });
+        }
+
+        // Flip property to pending review
+        await connection.execute(
+            `UPDATE properties
+             SET status='pending', updated_at=NOW()
+             WHERE id=?`,
+            [property_id]
+        );
+
+        // Mark the wizard/draft as completed
+        await connection.execute(
+            `UPDATE property_listing_progress
+             SET is_completed=1,
+                 completed_percentage=100,
+                 last_saved_at=NOW(),
+                 updated_at=NOW()
+             WHERE property_id=?`,
+            [property_id]
+        );
+
+        await connection.commit();
+
+        return res.json({
+            success: true,
+            message: "Listing submitted for review successfully."
+        });
+    } catch (error) {
+        await connection.rollback();
+        console.error(error);
         return res.status(500).json({
             success: false,
             message: error.message
