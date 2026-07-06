@@ -12,6 +12,7 @@ import propertyTypeRoute from "./routes/address/propertyTypeRoutes.js";
 import listingRouter from "./routes/listing/listing.Router.js";
 import { fileURLToPath } from 'url';
 import path from 'path';
+import adminRouter from "./routes/admin/adminRoute.js";
 
 // import vendorRoutes from "./routes/vendor/auth.route.js";
 
@@ -149,6 +150,7 @@ app.use("/api/vendor", vendorRoutes );
 app.use("/api/location", locationRoute);
 app.use("/api/property-types",propertyTypeRoute);
 app.use("/api/listing",listingRouter);
+app.use("/api/admin",adminRouter);
 /* ============================================
    404
 ============================================ */

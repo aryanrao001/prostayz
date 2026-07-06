@@ -1071,42 +1071,158 @@ function RatingBadge({ rating, reviews, dark }: { rating: number; reviews?: numb
   );
 }
 
-function PropertyTypeModal({ onClose }: { onClose: () => void }) {
+interface PropertyTypeModalProps {
+  onClose: () => void;
+  onNavigateToLogin: () => void;
+}
+
+export function PropertyTypeModal({ onClose, onNavigateToLogin }: PropertyTypeModalProps) {
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+
+  const navigate = useNavigate();
+
   const types = [
-    { label: "Villa", icon: Palmtree },
-    { label: "Hostel", icon: Users },
-    { label: "Apartment", icon: Home },
-    { label: "Luxury", icon: Star },
+    {
+      label: "Villa",
+      imgSrc: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=150&q=80",
+      description: "Luxury private stays",
+    },
+    {
+      label: "Hostel",
+      imgSrc: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=150&q=80",
+      description: "Shared living spaces",
+    },
+    {
+      label: "Apartment",
+      imgSrc: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=150&q=80",
+      description: "Modern urban lofts",
+    },
+    {
+      label: "Luxury",
+      imgSrc: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=150&q=80",
+      description: "Bespoke elite estates",
+    },
   ];
 
+  const handleContinue = () => {
+    if (selectedType) {
+      // onNavigateToLogin();
+      onClose();
+      navigate("/login");
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[#1E2A23]/70 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
-        <div className="flex justify-between items-center mb-5">
-          <h3 className="font-display text-[20px] text-[#1E2A23]">Select property type</h3>
-          <button onClick={onClose}><X size={20} className="text-[#9A917D]" /></button>
+    <div className="fixed inset-0 z-[110] bg-[#1E2A23]/25 backdrop-blur-sm flex items-center justify-center p-4 select-none font-sans antialiased">
+
+      {/* Short, wide container fitting nicely into 1/3 of desktop views */}
+      <div className="relative w-full max-w-5xl rounded-[20px] bg-[#FAF9F5] shadow-[0_24px_50px_-16px_rgba(30,42,35,0.1)] text-[#1E2A23] overflow-hidden transform transition-all duration-500 animate-in fade-in zoom-in-95">
+
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 w-7 h-7 rounded-full bg-white hover:bg-gray-100 active:scale-95 shadow-sm border border-gray-200/60 transition-all flex items-center justify-center z-20 group"
+        >
+          <X size={12} className="text-gray-400 group-hover:text-[#1E2A23]" />
+        </button>
+
+        {/* Dynamic Split Layout: Header Left, Content Right */}
+        <div className="flex flex-col md:flex-row min-h-0">
+
+          {/* Left Panel: Context Banner */}
+          <div className="md:w-[30%] bg-gradient-to-br from-[#2F6F62]/10 to-transparent p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-gray-200/60">
+            <div>
+              <span className="inline-block text-[9px] font-bold uppercase tracking-widest text-[#2F6F62] bg-[#2F6F62]/10 px-2 py-0.5 rounded-full mb-2">
+                Step 1 of 2
+              </span>
+              <h2 className="text-xl md:text-2xl font-bold tracking-tight leading-snug text-[#1E2A23]">
+                What's your space vibe?
+              </h2>
+            </div>
+            <p className="hidden md:block text-[11px] text-gray-400 font-normal leading-relaxed">
+              Select a category to match your listing's true environment.
+            </p>
+          </div>
+
+          {/* Right Panel: Content Grid & Inline Low-Profile Footer */}
+          <div className="md:w-[70%] p-5 md:p-6 flex flex-col justify-between gap-4">
+
+            {/* Horizontal Micro-Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {types.map((type) => {
+                const isSelected = selectedType === type.label;
+                return (
+                  <button
+                    key={type.label}
+                    onClick={() => setSelectedType(type.label)}
+                    className={`group relative w-full rounded-[12px] border p-2.5 transition-all duration-200 flex items-center gap-3 text-left outline-none bg-white ${isSelected
+                      ? "border-[#2F6F62] bg-white shadow-[0_8px_16px_-6px_rgba(47,111,98,0.08)] scale-[1.01]"
+                      : "border-gray-200/60 hover:border-[#2F6F62]/40"
+                      }`}
+                  >
+                    {/* Compact Image */}
+                    <div className="relative w-12 h-12 rounded-[8px] overflow-hidden bg-gray-100 shrink-0">
+                      <img
+                        src={type.imgSrc}
+                        alt={type.label}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+
+                    {/* Meta */}
+                    <div className="flex-grow min-w-0 pr-4">
+                      <h3 className="text-xs font-bold tracking-wide text-[#1E2A23] group-hover:text-[#2F6F62] transition-colors">
+                        {type.label}
+                      </h3>
+                      <p className="text-[10px] text-gray-400 truncate mt-0.5 font-normal">
+                        {type.description}
+                      </p>
+                    </div>
+
+                    {/* Micro Check Circle */}
+                    <div className={`absolute right-3 w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all duration-200 ${isSelected
+                      ? "bg-[#2F6F62] border-[#2F6F62] text-white"
+                      : "border-gray-200 text-transparent scale-90 group-hover:border-gray-300"
+                      }`}>
+                      <Check size={8} strokeWidth={3} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Compressed Horizontal Action Strip */}
+            <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+              <span className="text-[10px] text-gray-400 font-normal">
+                All choices redirect to verification logic.
+              </span>
+              <button
+                onClick={handleContinue}
+                disabled={!selectedType}
+                className={`px-5 py-1.5 rounded-md font-medium text-[11px] tracking-wide transition-all duration-300 flex items-center gap-1 ${selectedType
+                  ? "bg-[#2F6F62] text-white shadow-sm hover:bg-[#25574D] active:scale-[0.98] cursor-pointer"
+                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  }`}
+              >
+                <span>Continue</span>
+                <ArrowRight size={10} />
+              </button>
+            </div>
+
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          {types.map((type) => (
-            <button
-              key={type.label}
-              onClick={() => {
-                toast.success(`Selected ${type.label}`);
-                onClose();
-              }}
-              className="flex flex-col items-center justify-center gap-3 p-4 border border-[#E5DECF] rounded-xl hover:border-[#C99A3D] hover:bg-[#F5F2EA] transition"
-            >
-              <type.icon size={24} className="text-[#2F6F62]" />
-              <span className="text-[13px] font-semibold text-[#1E2A23]">{type.label}</span>
-            </button>
-          ))}
-        </div>
+
       </div>
     </div>
   );
 }
 
 function Navbar({ onListProperty }: { onListProperty: () => void }) {
+  const navigate = useNavigate();
+  const handleLoginClick = () => {
+    // Directs the user to the auth page and defaults to the login state
+    navigate("/login?mode=login");
+  };
   return (
     <header className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-[#E5DECF]">
       <div className="max-w-[1280px] mx-auto px-6 h-[72px] flex items-center justify-between gap-6">
@@ -1122,6 +1238,12 @@ function Navbar({ onListProperty }: { onListProperty: () => void }) {
             className="hidden sm:flex items-center gap-1.5 text-[13px] font-semibold text-[#1E2A23] hover:bg-[#F5F2EA] px-3.5 py-2 rounded-full transition"
           >
             List your property
+          </button>
+          <button
+            onClick={handleLoginClick}
+            className="hidden sm:flex items-center gap-1.5 text-[13px] font-semibold text-[#1E2A23] hover:bg-[#F5F2EA] px-3.5 py-2 rounded-full transition"
+          >
+            Login
           </button>
           <button className="w-10 h-10 rounded-full border border-[#E5DECF] flex items-center justify-center text-[#6B6354] hover:border-[#C99A3D] transition">
             <UserCircle2 size={19} />
@@ -1210,8 +1332,8 @@ function CategoryChips({
               key={c.label}
               onClick={() => onChange(c.label)}
               className={`flex items-center gap-2 flex-shrink-0 px-4 py-2.5 rounded-full text-[13px] font-medium border transition ${isActive
-                  ? "bg-[#1E2A23] border-[#1E2A23] text-white"
-                  : "bg-white border-[#E5DECF] text-[#6B6354] hover:border-[#C99A3D]"
+                ? "bg-[#1E2A23] border-[#1E2A23] text-white"
+                : "bg-white border-[#E5DECF] text-[#6B6354] hover:border-[#C99A3D]"
                 }`}
             >
               <Icon size={14} className={isActive ? "text-[#C99A3D]" : "text-[#9A917D]"} />
@@ -1416,8 +1538,8 @@ function PropertyDetail({ property, onClose }: { property: DemoProperty; onClose
               <span
                 key={rule.label}
                 className={`flex items-center gap-1.5 text-[12.5px] font-medium px-3 py-1.5 rounded-full border ${rule.allowed
-                    ? "border-[#2F6F62]/25 text-[#2F6F62] bg-[#2F6F62]/6"
-                    : "border-[#DBD3C4] text-[#9A917D]"
+                  ? "border-[#2F6F62]/25 text-[#2F6F62] bg-[#2F6F62]/6"
+                  : "border-[#DBD3C4] text-[#9A917D]"
                   }`}
               >
                 {rule.allowed ? <Check size={12} /> : <X size={12} />}

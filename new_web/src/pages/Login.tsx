@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import loginBack from "../assets/loginback.jpg";
 
@@ -30,7 +30,12 @@ const stackedInputCls =
     "w-full bg-white border border-[#DBD3C4] px-3.5 py-3 text-[14px] text-[#1E2A23] placeholder-[#B3AB99] outline-none focus:z-10 relative focus:border-[#2F6F62] focus:ring-2 focus:ring-[#2F6F62]/15 transition";
 
 const Login = () => {
-    const [step, setStep] = useState<Step>("LOGIN");
+    const [searchParams] = useSearchParams();
+    const modeParam = searchParams.get("mode");
+
+    // 3. Fallback dynamically: if mode=login, start with LOGIN; else default to REGISTER
+    const [step, setStep] = useState<Step>(modeParam === "login" ? "LOGIN" : "REGISTER");
+    // const [step, setStep] = useState<Step>("REGISTER");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
