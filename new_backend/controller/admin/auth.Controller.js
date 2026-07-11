@@ -1,4 +1,5 @@
 import pool from "../../config/db.js";
+import bcrypt from "bcrypt";
 
 export const login = async (req, res) => {
     try {

@@ -1,6 +1,6 @@
 import express from "express";
 import { verifyVendor, login, register, checkVendorSetup, getPropertyDetails, getVendorProperties, logout } from "../../controller/vendor/auth.Controller.js";
-import { authenticateUser } from "../../middleware/auth.middleWare.js";
+import {  authenticateVendor } from "../../middleware/auth.middleWare.js";
 import { uploadVendorDocument } from "../../controller/vendor/DocumentController.js";
 import upload from "../../middleware/upload.js";
 
@@ -9,8 +9,8 @@ const vendorRoutes = express.Router();
 
 vendorRoutes.post("/register", register);
 vendorRoutes.post("/login", login);
-vendorRoutes.get("/verify", authenticateUser, verifyVendor);
-vendorRoutes.get("/setup-status", authenticateUser, checkVendorSetup);
+vendorRoutes.get("/verify", authenticateVendor, verifyVendor);
+vendorRoutes.get("/setup-status", authenticateVendor, checkVendorSetup);
 
 vendorRoutes.post("/document/upload",
     upload.fields([
@@ -23,8 +23,8 @@ vendorRoutes.post("/document/upload",
     ]), uploadVendorDocument
 )
 
-vendorRoutes.get("/properties", authenticateUser, getVendorProperties);
-vendorRoutes.get("/property/:id", authenticateUser,getPropertyDetails);
+vendorRoutes.get("/properties", authenticateVendor , getVendorProperties);
+vendorRoutes.get("/property/:id", authenticateVendor ,getPropertyDetails);
 vendorRoutes.post("/logout",logout);
 
 export default vendorRoutes;

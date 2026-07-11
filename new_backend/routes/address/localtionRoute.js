@@ -1,6 +1,6 @@
 import express from "express";
 import { getCities, getCountries, getLocationHierarchy, getStates, saveVendorAddress } from "../../controller/address/locationController.js";
-import { authenticateUser } from "../../middleware/auth.middleWare.js";
+import { authenticateVendor } from "../../middleware/auth.middleWare.js";
 
 const locationRoute= express.Router();
 
@@ -12,6 +12,6 @@ locationRoute.get("/cities/:state_id", getCities);
 
 locationRoute.get("/locations", getLocationHierarchy);
 
-locationRoute.post("/address",authenticateUser, saveVendorAddress);
+locationRoute.post("/address",authenticateVendor, saveVendorAddress);
 
 export default locationRoute;

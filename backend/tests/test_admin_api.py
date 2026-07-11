@@ -25,7 +25,7 @@ def session():
 @pytest.fixture(scope="module")
 def admin_h(session):
     r = session.post(f"{API}/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
-    assert r.status_code == 200, r.text
+    assert r.status_code == 200, r.       
     tok = r.json()["token"]
     assert r.json()["user"].get("role") == "admin"
     return {"Authorization": f"Bearer {tok}"}

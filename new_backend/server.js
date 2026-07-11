@@ -13,6 +13,8 @@ import listingRouter from "./routes/listing/listing.Router.js";
 import { fileURLToPath } from 'url';
 import path from 'path';
 import adminRouter from "./routes/admin/adminRoute.js";
+import userRoutes from "./routes/user/userRoutes.js";
+import bookingRouter from "./routes/booking/bookinghandleRouter.js";
 
 // import vendorRoutes from "./routes/vendor/auth.route.js";
 
@@ -111,7 +113,6 @@ app.use(cookieParser());
 ============================================ */
 
 const MySQLStore = MySQLStoreFactory(session);
-
 const sessionStore = new MySQLStore({}, pool);
 
 /* ============================================
@@ -151,6 +152,8 @@ app.use("/api/location", locationRoute);
 app.use("/api/property-types",propertyTypeRoute);
 app.use("/api/listing",listingRouter);
 app.use("/api/admin",adminRouter);
+app.use("/api/user",userRoutes);
+app.use("/api",bookingRouter)
 /* ============================================
    404
 ============================================ */

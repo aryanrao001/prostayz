@@ -23,6 +23,15 @@ import Hotels from "./pages/Vendor/hotels";
 import ListingDetails from "./pages/Vendor/ListingDetails";
 import Booking from "./pages/Vendor/Booking";
 import AdminLogin from "./pages/Admin/Login";
+import AdminPrivateRoute from "./routes/AdminPrivateRoute";
+import AdminMain from "./pages/Admin/AdminMain";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
+import Vendor from "./pages/Admin/Vendor";
+import Property from "./pages/Admin/Property";
+import Amenities from "./pages/Admin/Amenities";
+import Propertytype from "./pages/Admin/Propertytype";
+import User from "./pages/Vendor/User";
+import BookingAdmin from "./pages/Admin/AdminBoookings";
 
 // Dashboard Pages
 // import Dashboard from "./pages/Vendor/Dashboard";
@@ -64,16 +73,17 @@ const App = () => {
           </Route>
         </Route>
 
-        {/* <Route element={<AdminPrivateRoute />}>
+        <Route element={<AdminPrivateRoute />}>
           <Route path="/admin" element={<AdminMain />}>
-            <Route
-              path="dashboard"
-              element={<AdminDashboard />}
-            />
-
-            
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="vendors" element={<Vendor />} />
+            <Route path="property" element={<Property />} />
+            <Route path="amenities" element={<Amenities/>} />
+            <Route path="propertytype" element={<Propertytype/>} />
+            <Route path="user" element={<User/>} />
+            <Route path="bookings" element={<BookingAdmin/>} />
           </Route>
-        </Route> */}
+        </Route>
 
 
 

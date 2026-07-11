@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Search,
   BedDouble,
   DoorOpen,
+  Home,
   Users,
   Moon,
   Phone,
@@ -12,7 +13,10 @@ import {
   XCircle,
   BadgeCheck,
   Ticket,
+  Loader2,
+  AlertTriangle,
 } from "lucide-react";
+import axios from "axios";
 
 /* ---------------------------------------------------------
    Same tokens as VendorMain / ListingDetails:
@@ -22,6 +26,7 @@ import {
 --------------------------------------------------------- */
 
 type BookingStatus = "confirmed" | "pending" | "checked_in" | "completed" | "cancelled";
+type BookingType = "whole_property" | "whole_room" | "dorm_bed";
 
 interface Booking {
   id: string;
@@ -29,8 +34,9 @@ interface Booking {
   guest: string;
   phone: string;
   property: string;
+  propertyId: string;
   roomName: string;
-  bookingType: "whole_room" | "dorm_bed";
+  bookingType: BookingType;
   bedLabel?: string;
   checkIn: string;
   checkOut: string;
@@ -38,111 +44,69 @@ interface Booking {
   adults: number;
   children: number;
   amount: number;
+  amountPaid: number;
+  currency: string;
   status: BookingStatus;
+  paymentStatus: string;
 }
 
-// ---------------- demo data, shaped off your real property/rooms ----------------
-const DEMO_BOOKINGS: Booking[] = [
-  {
-    id: "1",
-    ref: "PSZ-1052",
-    guest: "Ananya Verma",
-    phone: "+91 98123 44210",
-    property: "Saffron Bagh Heritage Stay",
-    roomName: "Heritage Garden Room",
-    bookingType: "whole_room",
-    checkIn: "2026-07-08",
-    checkOut: "2026-07-11",
-    nights: 3,
-    adults: 2,
-    children: 0,
-    amount: 12600,
-    status: "confirmed",
-  },
-  {
-    id: "2",
-    ref: "PSZ-1053",
-    guest: "Rohan Malhotra",
-    phone: "+91 99887 21034",
-    property: "Saffron Bagh Heritage Stay",
-    roomName: "Backpacker Mixed Dorm",
-    bookingType: "dorm_bed",
-    bedLabel: "Bunk A · Top",
-    checkIn: "2026-07-08",
-    checkOut: "2026-07-10",
-    nights: 2,
-    adults: 1,
-    children: 0,
-    amount: 1500,
-    status: "confirmed",
-  },
-  {
-    id: "3",
-    ref: "PSZ-1054",
-    guest: "Emma Fischer",
-    phone: "+49 151 2233 8899",
-    property: "Saffron Bagh Heritage Stay",
-    roomName: "Backpacker Mixed Dorm",
-    bookingType: "dorm_bed",
-    bedLabel: "Bunk A · Bottom",
-    checkIn: "2026-07-01",
-    checkOut: "2026-07-05",
-    nights: 4,
-    adults: 1,
-    children: 0,
-    amount: 4200,
-    status: "checked_in",
-  },
-  {
-    id: "4",
-    ref: "PSZ-1055",
-    guest: "Sara Ibrahim",
-    phone: "+971 50 442 1187",
-    property: "Saffron Bagh Heritage Stay",
-    roomName: "Backpacker Mixed Dorm",
-    bookingType: "dorm_bed",
-    bedLabel: "Bunk B · Top",
-    checkIn: "2026-07-15",
-    checkOut: "2026-07-16",
-    nights: 1,
-    adults: 1,
-    children: 0,
-    amount: 950,
-    status: "pending",
-  },
-  {
-    id: "5",
-    ref: "PSZ-1049",
-    guest: "Vikram Shah",
-    phone: "+91 98220 77654",
-    property: "Saffron Bagh Heritage Stay",
-    roomName: "Heritage Garden Room",
-    bookingType: "whole_room",
-    checkIn: "2026-06-20",
-    checkOut: "2026-06-22",
-    nights: 2,
-    adults: 1,
-    children: 1,
-    amount: 8400,
-    status: "completed",
-  },
-  {
-    id: "6",
-    ref: "PSZ-1041",
-    guest: "Karan Kapoor",
-    phone: "+91 96543 10982",
-    property: "Saffron Bagh Heritage Stay",
-    roomName: "Heritage Garden Room",
-    bookingType: "whole_room",
-    checkIn: "2026-06-05",
-    checkOut: "2026-06-06",
-    nights: 1,
-    adults: 2,
-    children: 0,
-    amount: 4200,
-    status: "cancelled",
-  },
-];
+interface VendorProperty {
+  id: string;
+  name: string;
+}
+
+/* ---------------------------------------------------------
+   Backend → UI mapping
+--------------------------------------------------------- */
+
+const BOOKING_STATUS_MAP: Record<string, BookingStatus> = {
+  pending: "pending",
+  confirmed: "confirmed",
+  checked_in: "checked_in",
+  checked_out: "completed",
+  cancelled: "cancelled",
+  no_show: "cancelled",
+};
+
+function mapApiBookingToUi(b: any): Booking {
+  // rooms[] comes from booking_rooms joined with rooms + room_dorm_beds.
+  // A booking can theoretically span multiple room rows; the card shows the
+  // primary one and — if there's more than one — a "+N more" is folded into roomName.
+  const primaryRoom = b.rooms?.[0];
+  const extraRoomCount = (b.rooms?.length || 1) - 1;
+
+  let bookingType: BookingType = "whole_room";
+  if (primaryRoom?.room_category === "whole_property") bookingType = "whole_property";
+  else if (primaryRoom?.dorm_bed_id) bookingType = "dorm_bed";
+
+  const amountPaid = (b.payments || [])
+    .filter((p: any) => p.status === "success" && p.payment_type !== "refund")
+    .reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+
+  return {
+    id: String(b.id),
+    ref: b.booking_number,
+    guest: [b.user_first_name, b.user_last_name].filter(Boolean).join(" ") || b.contact_name || "Guest",
+    phone: b.contact_phone || b.user_phone || "—",
+    property: b.property_name,
+    propertyId: String(b.property_id),
+    roomName: primaryRoom
+      ? `${primaryRoom.room_name}${extraRoomCount > 0 ? ` +${extraRoomCount} more` : ""}`
+      : "Room unavailable",
+    bookingType,
+    bedLabel: primaryRoom?.bed_label || undefined,
+    checkIn: b.check_in_date,
+    checkOut: b.check_out_date,
+    nights: b.nights,
+    adults: b.adults,
+    children: b.children,
+    amount: Number(b.total_amount),
+    amountPaid,
+    currency: b.currency || "INR",
+    status: BOOKING_STATUS_MAP[b.booking_status] || "pending",
+    paymentStatus: b.payment_status,
+  };
+}
 
 const STATUS_META: Record<
   BookingStatus,
@@ -172,6 +136,9 @@ function initials(name: string) {
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
+function currencySymbol(code: string) {
+  return code === "USD" ? "$" : code === "AED" ? "AED " : "₹";
+}
 
 const TABS: { key: string; label: string; match: (s: BookingStatus) => boolean }[] = [
   { key: "all", label: "All", match: () => true },
@@ -184,22 +151,84 @@ const TABS: { key: string; label: string; match: (s: BookingStatus) => boolean }
 const Booking = () => {
   const [tab, setTab] = useState("all");
   const [query, setQuery] = useState("");
+  const [properties, setProperties] = useState<VendorProperty[]>([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("all");
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+  // Step 1 — fetch the vendor's properties, so we know what to scope bookings by
+  // and can label the property filter with real names.
+  const fetchProperties = async (): Promise<VendorProperty[]> => {
+    try {
+      const res = await axios.get(`${backendUrl}/api/vendor/properties`, {
+        withCredentials: true,
+      });
+      const list: VendorProperty[] = (res.data?.data || []).map((p: any) => ({
+        id: String(p.id),
+        name: p.property_name,
+      }));
+      setProperties(list);
+      return list;
+    } catch (err) {
+      console.error("Failed to load properties", err);
+      return [];
+    }
+  };
+
+  // Step 2 — fetch bookings, optionally scoped to a property.
+  const fetchBookings = async (propertyId?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(`${backendUrl}/api/vendor/bookings`, {
+        withCredentials: true,
+        params: propertyId && propertyId !== "all" ? { propertyId } : {},
+      });
+      const mapped = (res.data?.data || []).map(mapApiBookingToUi);
+      setBookings(mapped);
+    } catch (err) {
+      console.error("Failed to load bookings", err);
+      setError("Couldn't load your bookings. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      await fetchProperties();
+      await fetchBookings();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handlePropertyChange = (propertyId: string) => {
+    setSelectedPropertyId(propertyId);
+    fetchBookings(propertyId);
+  };
 
   const filtered = useMemo(() => {
     const tabFilter = TABS.find((t) => t.key === tab) ?? TABS[0];
-    return DEMO_BOOKINGS.filter((b) => tabFilter.match(b.status)).filter((b) =>
-      query.trim()
-        ? (b.guest + b.ref + b.roomName).toLowerCase().includes(query.trim().toLowerCase())
-        : true
-    );
-  }, [tab, query]);
+    return bookings
+      .filter((b) => tabFilter.match(b.status))
+      .filter((b) =>
+        query.trim()
+          ? (b.guest + b.ref + b.roomName + b.property).toLowerCase().includes(query.trim().toLowerCase())
+          : true
+      );
+  }, [tab, query, bookings]);
 
   const stats = useMemo(() => {
-    const upcoming = DEMO_BOOKINGS.filter((b) => b.status === "confirmed" || b.status === "pending").length;
-    const checkedIn = DEMO_BOOKINGS.filter((b) => b.status === "checked_in").length;
-    const revenue = DEMO_BOOKINGS.filter((b) => b.status !== "cancelled").reduce((s, b) => s + b.amount, 0);
-    return { total: DEMO_BOOKINGS.length, upcoming, checkedIn, revenue };
-  }, []);
+    const upcoming = bookings.filter((b) => b.status === "confirmed" || b.status === "pending").length;
+    const checkedIn = bookings.filter((b) => b.status === "checked_in").length;
+    const revenue = bookings
+      .filter((b) => b.status !== "cancelled")
+      .reduce((s, b) => s + b.amountPaid, 0);
+    return { total: bookings.length, upcoming, checkedIn, revenue };
+  }, [bookings]);
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
@@ -213,7 +242,7 @@ const Booking = () => {
             Every stay, one ledger
           </h1>
           <p className="text-[13px] text-[#9A917D] mt-1">
-            Whole-room and single-bed bookings across your properties.
+            Whole-property, whole-room, and single-bed bookings across your properties.
           </p>
         </div>
         <div className="relative">
@@ -227,12 +256,46 @@ const Booking = () => {
         </div>
       </div>
 
+      {/* property filter */}
+      {properties.length > 0 && (
+        <div className="flex items-center gap-1.5 mb-5 flex-wrap">
+          <button
+            onClick={() => handlePropertyChange("all")}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12.5px] font-medium transition border ${
+              selectedPropertyId === "all"
+                ? "bg-[#2F6F62] text-white border-[#2F6F62]"
+                : "bg-white text-[#6B6354] border-[#E5DECF] hover:border-[#2F6F62]"
+            }`}
+          >
+            <Home size={12} />
+            All properties
+          </button>
+          {properties.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => handlePropertyChange(p.id)}
+              className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium transition border ${
+                selectedPropertyId === p.id
+                  ? "bg-[#2F6F62] text-white border-[#2F6F62]"
+                  : "bg-white text-[#6B6354] border-[#E5DECF] hover:border-[#2F6F62]"
+              }`}
+            >
+              {p.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* stat strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <StatCard label="Total bookings" value={stats.total} />
-        <StatCard label="Upcoming" value={stats.upcoming} accent="#C99A3D" />
-        <StatCard label="Checked in now" value={stats.checkedIn} accent="#2F6F62" />
-        <StatCard label="Revenue on book" value={`₹${stats.revenue.toLocaleString("en-IN")}`} mono />
+        <StatCard label="Total bookings" value={loading ? "—" : stats.total} />
+        <StatCard label="Upcoming" value={loading ? "—" : stats.upcoming} accent="#C99A3D" />
+        <StatCard label="Checked in now" value={loading ? "—" : stats.checkedIn} accent="#2F6F62" />
+        <StatCard
+          label="Revenue collected"
+          value={loading ? "—" : `₹${stats.revenue.toLocaleString("en-IN")}`}
+          mono
+        />
       </div>
 
       {/* tabs */}
@@ -252,8 +315,24 @@ const Booking = () => {
         ))}
       </div>
 
-      {/* booking stubs */}
-      {filtered.length === 0 ? (
+      {/* content states */}
+      {loading ? (
+        <div className="rounded-2xl border border-dashed border-[#DBD3C4] bg-white/60 py-14 text-center">
+          <Loader2 className="mx-auto text-[#9A917D] mb-2 animate-spin" size={22} />
+          <p className="text-[13px] text-[#9A917D]">Loading your bookings…</p>
+        </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-dashed border-[#F0C9BC] bg-[#F6E4DF]/40 py-14 text-center">
+          <AlertTriangle className="mx-auto text-[#B3452E] mb-2" size={22} />
+          <p className="text-[13px] text-[#B3452E] mb-3">{error}</p>
+          <button
+            onClick={() => fetchBookings(selectedPropertyId)}
+            className="text-[12.5px] font-medium text-white bg-[#B3452E] rounded-full px-4 py-1.5 hover:opacity-90 transition"
+          >
+            Try again
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#DBD3C4] bg-white/60 py-14 text-center">
           <Ticket className="mx-auto text-[#B3AB99] mb-2" size={22} />
           <p className="text-[13px] text-[#9A917D]">No bookings match this view.</p>
@@ -291,11 +370,19 @@ const StatCard = ({
   </div>
 );
 
+const TYPE_LABEL: Record<BookingType, string> = {
+  whole_property: "Whole property",
+  whole_room: "Whole room",
+  dorm_bed: "Single bed",
+};
+
 const BookingStub = ({ booking: b }: { booking: Booking }) => {
   const meta = STATUS_META[b.status];
   const StatusIcon = meta.icon;
-  const TypeIcon = b.bookingType === "whole_room" ? DoorOpen : BedDouble;
+  const TypeIcon = b.bookingType === "dorm_bed" ? BedDouble : b.bookingType === "whole_property" ? Home : DoorOpen;
   const color = avatarColor(b.guest);
+  const symbol = currencySymbol(b.currency);
+  const partiallyPaid = b.paymentStatus === "partially_paid";
 
   return (
     <div className="relative flex rounded-2xl border border-[#E5DECF] bg-white overflow-hidden hover:shadow-md transition-shadow">
@@ -313,8 +400,13 @@ const BookingStub = ({ booking: b }: { booking: Booking }) => {
             <h3 className="text-[14.5px] font-semibold text-[#1E2A23] truncate">{b.guest}</h3>
             <span className="flex items-center gap-1 text-[10.5px] uppercase tracking-[0.05em] font-semibold text-[#9A917D] bg-[#F5F2EA] rounded-full px-2 py-0.5">
               <TypeIcon size={11} />
-              {b.bookingType === "whole_room" ? "Whole room" : "Single bed"}
+              {TYPE_LABEL[b.bookingType]}
             </span>
+            {partiallyPaid && (
+              <span className="text-[10.5px] uppercase tracking-[0.05em] font-semibold text-[#95721E] bg-[#FBF0DA] rounded-full px-2 py-0.5">
+                Partially paid
+              </span>
+            )}
           </div>
 
           <p className="text-[12.5px] text-[#6B6354] mt-1 flex items-center gap-1 flex-wrap">
@@ -362,7 +454,8 @@ const BookingStub = ({ booking: b }: { booking: Booking }) => {
           {meta.label}
         </span>
         <p className="font-mono-num text-[17px] font-semibold text-[#1E2A23]">
-          ₹{b.amount.toLocaleString("en-IN")}
+          {symbol}
+          {b.amount.toLocaleString("en-IN")}
         </p>
         <p className="font-mono-num text-[10px] text-[#B3AB99] tracking-wide">{b.ref}</p>
       </div>

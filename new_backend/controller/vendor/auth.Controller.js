@@ -94,11 +94,11 @@ export const login = async (req, res) => {
                 message: "Email and Password are required."
             });
         }
-        const [rows] = await pool.query(
-            "SELECT * FROM vendors WHERE email=?",
+        const [rows] = await pool.execute(
+            `SELECT * FROM vendors WHERE email = ? LIMIT 1`,
             [email]
         );
-        if (!rows.length) {
+        if (rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: "Vendor not found."
@@ -108,7 +108,7 @@ export const login = async (req, res) => {
         if (vendor.status !== "active") {
             return res.status(403).json({
                 success: false,
-                message: "Account inactive."
+                message: "Your account is inactive. Please contact the administrator."
             });
         }
         const match = await bcrypt.compare(
@@ -116,27 +116,53 @@ export const login = async (req, res) => {
             vendor.password
         );
         if (!match) {
-
             return res.status(401).json({
                 success: false,
-                message: "Invalid password."
+                message: "Invalid email or password."
             });
-
         }
-        req.session.vendorId = vendor.id;
-        delete vendor.password;
-        delete vendor.otp;
-        delete vendor.remember_token;
-        return res.json({
-            success: true,
-            message: "Login successful.",
-            vendor
+        // Update Last Login
+        await pool.execute(
+            `UPDATE vendors
+             SET last_login_at = NOW()
+             WHERE id = ?`,
+            [vendor.id]
+        );
+        // Regenerate Session ID
+        req.session.regenerate((err) => {
+            if (err) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Unable to create session."
+                });
+            }
+            req.session.vendorId = vendor.id;
+            const vendorData = {
+                id: vendor.id,
+                first_name: vendor.first_name,
+                last_name: vendor.last_name,
+                full_name: `${vendor.first_name} ${vendor.last_name}`,
+                email: vendor.email,
+                phone: vendor.phone,
+                country_code: vendor.country_code,
+                profile_image: vendor.profile_image,
+                business_name: vendor.business_name,
+                gst_number: vendor.gst_number,
+                pan_number: vendor.pan_number,
+                status: vendor.status,
+                last_login_at: new Date()
+            };
+            return res.status(200).json({
+                success: true,
+                message: "Login successful.",
+                vendor: vendorData
+            });
         });
     } catch (error) {
-        console.log(error);
+        console.error(error);
         return res.status(500).json({
             success: false,
-            message: "Server Error"
+            message: "Internal Server Error."
         });
     }
 };
