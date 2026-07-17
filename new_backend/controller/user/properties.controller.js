@@ -64,6 +64,9 @@ export const getProperties = async (req, res) => {
     // ---- Data query ----
     // property_addresses / property_amenities / property_images are 1:1 or 1:many,
     // so GROUP BY p.id + GROUP_CONCAT collapses amenities into one row per property.
+    // pi.image is wrapped in ANY_VALUE() because MySQL's ONLY_FULL_GROUP_BY mode
+    // can't prove it's functionally dependent on p.id (even filtered by is_cover = 1),
+    // since in theory more than one row per property could match that filter.
     const dataSql = `
       SELECT
         p.id,
@@ -81,7 +84,7 @@ export const getProperties = async (req, res) => {
         pa.country,
         pt.id   AS property_type_id,
         pt.name AS property_type_name,
-        pi.image AS cover_image,
+        ANY_VALUE(pi.image) AS cover_image,
         GROUP_CONCAT(DISTINCT a.name) AS amenities
       FROM properties p
       LEFT JOIN property_addresses  pa  ON pa.property_id = p.id
@@ -122,10 +125,125 @@ export const getProperties = async (req, res) => {
         total,
         totalPages: Math.ceil(total / limitNum) || 1,
       },
-      filters: { type: type ?? null, location: location ?? null, search: search ?? null, min_price: min_price ?? null, max_price: max_price ?? null, sort },
+      filters: {
+        type: type ?? null,
+        location: location ?? null,
+        search: search ?? null,
+        min_price: min_price ?? null,
+        max_price: max_price ?? null,
+        sort,
+      },
     });
   } catch (err) {
     console.error("getProperties error:", err);
     return res.status(500).json({ success: false, message: "Failed to fetch properties" });
+  }
+};
+/* ============================================================
+   GET /user/properties/:slug
+   Everything the redesigned property details page needs in one
+   round trip: gallery, description, facts, address+coords (for
+   the map), host info, amenities, rooms w/ pricing, policies,
+   rules, and a review summary (average + category breakdown).
+   Full review list is paginated separately via
+   GET /review/property/:propertyId.
+============================================================ */
+export const getPropertyDetails = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const [[property]] = await pool.query(
+      `SELECT p.*, pt.name AS property_type_name
+       FROM properties p
+       LEFT JOIN property_types pt ON pt.id = p.property_type_id
+       WHERE p.slug = ? AND p.status = 'approved'
+       LIMIT 1`,
+      [slug]
+    );
+
+    if (!property) {
+      return res.status(404).json({ success: false, message: "Property not found" });
+    }
+
+    const [
+      [address],
+      images,
+      amenityRows,
+      rooms,
+      [host],
+      policies,
+      rules,
+      [reviewSummary],
+    ] = await Promise.all([
+      pool.query(`SELECT * FROM property_addresses WHERE property_id = ? LIMIT 1`, [property.id]).then((r) => r[0]),
+      pool.query(
+        `SELECT id, image, is_cover, sort_order FROM property_images WHERE property_id = ? ORDER BY is_cover DESC, sort_order ASC`,
+        [property.id]
+      ).then((r) => r[0]),
+      pool.query(
+        `SELECT a.id, a.name, a.icon FROM property_amenities pam
+         JOIN amenities a ON a.id = pam.amenity_id
+         WHERE pam.property_id = ?`,
+        [property.id]
+      ).then((r) => r[0]),
+      pool.query(
+        `SELECT r.*, rp.price, rp.weekend_price, rp.extra_guest_price, rp.tax
+         FROM rooms r
+         LEFT JOIN room_prices rp ON rp.room_id = r.id
+         WHERE r.property_id = ?
+         ORDER BY rp.price ASC`,
+        [property.id]
+      ).then((r) => r[0]),
+      pool.query(
+        `SELECT id, first_name, last_name, business_name, profile_image, created_at
+         FROM vendors WHERE id = ? LIMIT 1`,
+        [property.vendor_id]
+      ).then((r) => r[0]),
+      pool.query(`SELECT * FROM property_policies WHERE property_id = ?`, [property.id]).then((r) => r[0]),
+      pool.query(`SELECT * FROM property_rules WHERE property_id = ?`, [property.id]).then((r) => r[0]),
+      pool.query(
+        `SELECT
+            COUNT(*) AS total_reviews,
+            ROUND(AVG(rating), 2) AS average_rating,
+            ROUND(AVG(cleanliness_rating), 2) AS cleanliness_avg,
+            ROUND(AVG(accuracy_rating), 2) AS accuracy_avg,
+            ROUND(AVG(value_rating), 2) AS value_avg
+         FROM property_reviews
+         WHERE property_id = ? AND status = 'approved'`,
+        [property.id]
+      ).then((r) => r[0]),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...property,
+        property_type_name: property.property_type_name,
+        address: address || null,
+        images: images || [],
+        amenities: amenityRows || [],
+        rooms: rooms || [],
+        host: host
+          ? {
+              id: host.id,
+              name: host.business_name || `${host.first_name} ${host.last_name}`,
+              profile_image: host.profile_image,
+              hosting_since: host.created_at,
+            }
+          : null,
+        policies: policies?.[0] || null,
+        rules: rules?.[0] || null,
+        reviews_summary: reviewSummary || {
+          total_reviews: 0,
+          average_rating: null,
+          cleanliness_avg: null,
+          accuracy_avg: null,
+          value_avg: null,
+        },
+      },
+    });
+  } catch (err) {
+    console.error("getPropertyDetails error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch property" });
   }
 };

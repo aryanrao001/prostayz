@@ -1,0 +1,53 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
+
+/*
+  Prostayz design tokens — single source of truth for the whole app
+  (web + shared with the guest-facing pages). Previously these lived
+  as a one-off <style> block copy-pasted inside EntryPage.tsx, which
+  meant only that page ever picked up the real typefaces; every other
+  screen silently fell back to system sans. Centralising here is what
+  makes "font-display" / "font-mono-num" actually mean something
+  app-wide instead of page-wide.
+
+  canvas #F5F2EA   ink #1E2A23   pine #2F6F62   brass #C99A3D
+  line   #DBD3C4   sand #9A917D
+*/
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --font-mono-num: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-canvas: #F5F2EA;
+  --color-ink: #1E2A23;
+  --color-pine: #2F6F62;
+  --color-brass: #C99A3D;
+  --color-line: #DBD3C4;
+  --color-sand: #9A917D;
+}
+
+* {
+  font-family: var(--font-sans);
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono-num {
+  font-family: var(--font-mono-num);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Respect reduced-motion preferences across the app */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

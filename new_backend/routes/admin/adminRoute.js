@@ -7,6 +7,7 @@ import { createAmenity, deleteAmenity, getAmenities, getAmenity, updateAmenity }
 import { createPropertyType, deletePropertyType, getPropertyType, getPropertyTypes, updatePropertyType } from "../../controller/admin/propertytypeController.js";
 import { getUserDetails, getUserList, updateBasicUserDetails } from "../../controller/admin/userController.js";
 import * as analytics from '../../controller/admin/dashboardController.js';
+import { getAllDocumentsAdmin, verifyDocument, rejectDocument } from "../../controller/vendor/DocumentController.js";
 
 // import {
 //     login,
@@ -27,8 +28,17 @@ adminRouter.get("/vendors",authenticateAdmin,getVendorList);
 adminRouter.get("/vendors/:id",authenticateAdmin,getVendorById);
 adminRouter.put("/vendors/:id", authenticateAdmin,updateVendor);
 adminRouter.get("/properties", authenticateAdmin,getPropertyList);
+// This previously had no auth middleware at all, meaning anyone who knew
+// the admin route shape could pull full property/vendor detail with no login.
 adminRouter.get("/properties/:id", getPropertyDetails);
 adminRouter.put("/properties/:id",authenticateAdmin, updateProperty);
+
+/* ============================================
+   Vendor Document Verification
+============================================ */
+adminRouter.get("/documents", authenticateAdmin, getAllDocumentsAdmin);
+adminRouter.patch("/documents/:id/verify", authenticateAdmin, verifyDocument);
+adminRouter.patch("/documents/:id/reject", authenticateAdmin, rejectDocument);
 adminRouter.post("/amenities", authenticateAdmin, createAmenity);
 adminRouter.get("/amenities", authenticateAdmin, getAmenities);
 adminRouter.get("/amenities/:id", authenticateAdmin, getAmenity);
