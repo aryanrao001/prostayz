@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 10, 2026 at 09:23 AM
+-- Generation Time: Jul 18, 2026 at 11:10 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -16,10 +16,13 @@ SET time_zone = "+00:00";
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
+
 --
 -- Database: `prostayz`
 --
+
 -- --------------------------------------------------------
+
 --
 -- Table structure for table `admins`
 --
@@ -48,7 +51,7 @@ CREATE TABLE `admins` (
 --
 
 INSERT INTO `admins` (`id`, `first_name`, `last_name`, `email`, `phone`, `country_code`, `password`, `profile_image`, `role`, `status`, `last_login_at`, `last_login_ip`, `remember_token`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, 'Rajat', 'Yadav', 'admin@prostayz.com', '9310155405', '+91', '$2b$10$SzkRQx88n9fDZDGFWQzDEerlQ.YnkGgM3UdPND5mUNuvNn/j7eBY6', NULL, 'super_admin', 'active', '2026-07-10 06:39:21', '::1', NULL, NULL, '2026-07-04 05:45:30', '2026-07-10 06:39:21');
+(1, 'Rajat', 'Yadav', 'admin@prostayz.com', '9310155405', '+91', '$2b$10$SzkRQx88n9fDZDGFWQzDEerlQ.YnkGgM3UdPND5mUNuvNn/j7eBY6', NULL, 'super_admin', 'active', '2026-07-17 11:34:04', '::1', NULL, NULL, '2026-07-04 05:45:30', '2026-07-17 11:34:04');
 
 -- --------------------------------------------------------
 
@@ -123,7 +126,11 @@ CREATE TABLE `bookings` (
 
 INSERT INTO `bookings` (`id`, `booking_number`, `user_id`, `property_id`, `vendor_id`, `check_in_date`, `check_out_date`, `nights`, `adults`, `children`, `subtotal`, `tax_amount`, `extra_guest_amount`, `discount_amount`, `total_amount`, `currency`, `booking_status`, `payment_status`, `contact_name`, `contact_phone`, `contact_email`, `special_requests`, `cancellation_reason`, `cancelled_at`, `cancelled_by`, `created_at`, `updated_at`) VALUES
 (1, 'BKMRDGX32E9OID', 1, 1, 1, '2026-07-09', '2026-07-10', 1, 2, 0, 750.00, 90.00, 0.00, 0.00, 840.00, 'INR', 'pending', 'pending', 'Anjali Rathore', '+91 98765 43210', 'testing2@gmail.com', 'Check thid', NULL, NULL, NULL, '2026-07-09 12:13:30', '2026-07-09 12:13:30'),
-(2, 'BKMRDH4K71BU4W', 1, 1, 1, '2026-07-09', '2026-07-10', 1, 2, 0, 1050.00, 126.00, 0.00, 0.00, 1176.00, 'INR', 'pending', 'pending', 'Anjali Rathore', '+91 98765 43210', 'yahah', 'Jajsj', NULL, NULL, NULL, '2026-07-09 12:19:19', '2026-07-09 12:19:19');
+(2, 'BKMRDH4K71BU4W', 1, 1, 1, '2026-07-09', '2026-07-10', 1, 2, 0, 1050.00, 126.00, 0.00, 0.00, 1176.00, 'INR', 'pending', 'pending', 'Anjali Rathore', '+91 98765 43210', 'yahah', 'Jajsj', NULL, NULL, NULL, '2026-07-09 12:19:19', '2026-07-09 12:19:19'),
+(3, 'BKMREN32ISSMVY', 1, 1, 1, '2026-07-11', '2026-07-12', 1, 2, 0, 4800.00, 599.88, 199.00, 0.00, 5598.88, 'INR', 'pending', 'pending', 'Anjali Rathore', '+91 98765 43210', 'testing3@gmail.com', 'Check it ut', NULL, NULL, NULL, '2026-07-10 07:53:54', '2026-07-10 07:53:54'),
+(4, 'BKMREN5OJ85FQ3', 1, 8, 2, '2026-07-11', '2026-07-12', 1, 2, 0, 2001.00, 240.12, 0.00, 0.00, 2241.12, 'INR', 'confirmed', 'paid', 'Rajat Yadav', '+91 98765 43210', 'rk6358797@gmail.com', 'Checking', NULL, NULL, NULL, '2026-07-10 07:55:55', '2026-07-17 09:07:30'),
+(5, 'BKMREW9C9RDMMA', 1, 1, 1, '2026-07-11', '2026-07-12', 1, 2, 0, 4800.00, 599.88, 199.00, 0.00, 5598.88, 'INR', 'confirmed', 'paid', 'Anjali Rathore', '+91 98765 43210', 'check', 'Checkthisout', NULL, NULL, NULL, '2026-07-10 12:10:43', '2026-07-17 09:05:15'),
+(6, 'BKMREWAIW851S7', 1, 1, 1, '2026-07-11', '2026-07-30', 19, 2, 2, 83400.00, 10461.72, 3781.00, 0.00, 97642.72, 'INR', 'no_show', 'paid', 'Anjali Rathore', '+91 98765 43210', 'chr', 'Bbb', NULL, NULL, NULL, '2026-07-10 12:11:38', '2026-07-17 09:05:23');
 
 -- --------------------------------------------------------
 
@@ -167,7 +174,11 @@ CREATE TABLE `booking_rooms` (
 
 INSERT INTO `booking_rooms` (`id`, `booking_id`, `room_id`, `dorm_bed_id`, `quantity`, `room_price`, `extra_guest_price`, `tax`, `created_at`) VALUES
 (1, 1, 7, 5, 1, 750.00, 0.00, 90.00, '2026-07-09 12:13:30'),
-(2, 2, 7, 6, 1, 1050.00, 0.00, 126.00, '2026-07-09 12:19:19');
+(2, 2, 7, 6, 1, 1050.00, 0.00, 126.00, '2026-07-09 12:19:19'),
+(3, 3, 6, NULL, 1, 4800.00, 199.00, 599.88, '2026-07-10 07:53:54'),
+(4, 4, 16, NULL, 1, 2001.00, 0.00, 240.12, '2026-07-10 07:55:55'),
+(5, 5, 6, NULL, 1, 4800.00, 199.00, 599.88, '2026-07-10 12:10:43'),
+(6, 6, 6, NULL, 1, 83400.00, 3781.00, 10461.72, '2026-07-10 12:11:38');
 
 -- --------------------------------------------------------
 
@@ -260,22 +271,24 @@ CREATE TABLE `properties` (
   `latitude` decimal(10,8) DEFAULT NULL,
   `longitude` decimal(11,8) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `average_rating` decimal(3,2) DEFAULT 0.00,
+  `total_reviews` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `properties`
 --
 
-INSERT INTO `properties` (`id`, `vendor_id`, `property_type_id`, `property_name`, `slug`, `description`, `star_rating`, `contact_name`, `contact_number`, `email`, `website`, `check_in`, `check_out`, `total_rooms`, `min_price`, `max_price`, `status`, `is_featured`, `latitude`, `longitude`, `created_at`, `updated_at`) VALUES
-(1, 1, 7, 'Taj Palace, New Delhi', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, 950.00, 4200.00, 'approved', 0, NULL, NULL, '2026-06-30 10:12:38', '2026-07-01 12:07:43'),
-(2, 1, 7, 'The Imperial, New Delhi', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, NULL, NULL, 'draft', 0, NULL, NULL, '2026-07-01 12:10:17', '2026-07-01 12:10:17'),
-(3, 4, 7, 'Radisson Blu Plaza Delhi Airport', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, 4200.00, 4200.00, 'approved', 0, NULL, NULL, '2026-07-03 19:09:10', '2026-07-03 19:13:29'),
-(4, 2, 7, 'The LaLiT, New Delhi', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, 4200.00, 4200.00, 'approved', 0, NULL, NULL, '2026-07-04 05:39:12', '2026-07-04 05:40:31'),
-(5, 6, 7, 'Saffron Bagh Heritage Stay', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, 4200.00, 4200.00, 'approved', 0, NULL, NULL, '2026-07-04 06:32:41', '2026-07-04 06:36:00'),
-(6, 7, 7, 'The Leela Palace New Delhi', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, 4200.00, 4200.00, 'approved', 0, NULL, NULL, '2026-07-04 07:07:40', '2026-07-08 11:03:59'),
-(7, 8, 2, 'Splendid Sanctuary', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, 28000.00, 28000.00, 'approved', 0, NULL, NULL, '2026-07-04 09:19:31', '2026-07-06 11:16:07'),
-(8, 2, 2, 'Spiritual & Vastu-Aligned', 'spiritual-vastu-aligned', 'Lorem ipsum dolor sit amet, consectetur adipisicing elit. Odit vero, sunt quia ex temporibus perspiciatis veritatis quasi a praesentium laborum consequuntur, at soluta mollitia doloribus in, nulla ratione natus minus.', 4, 'Rajat Yadav', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '11:00:00', '10:59:00', 4, 200.00, 200.00, 'approved', 0, NULL, NULL, '2026-07-10 06:42:33', '2026-07-10 06:45:58');
+INSERT INTO `properties` (`id`, `vendor_id`, `property_type_id`, `property_name`, `slug`, `description`, `star_rating`, `contact_name`, `contact_number`, `email`, `website`, `check_in`, `check_out`, `total_rooms`, `min_price`, `max_price`, `status`, `is_featured`, `latitude`, `longitude`, `created_at`, `updated_at`, `average_rating`, `total_reviews`) VALUES
+(1, 1, 7, 'Taj Palace, New Delhi', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, 950.00, 4200.00, 'approved', 0, NULL, NULL, '2026-06-30 10:12:38', '2026-07-01 12:07:43', 0.00, 0),
+(2, 1, 7, 'The Imperial, New Delhi', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, NULL, NULL, 'draft', 0, NULL, NULL, '2026-07-01 12:10:17', '2026-07-01 12:10:17', 0.00, 0),
+(3, 4, 7, 'Radisson Blu Plaza Delhi Airport', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, 4200.00, 4200.00, 'approved', 0, NULL, NULL, '2026-07-03 19:09:10', '2026-07-03 19:13:29', 0.00, 0),
+(4, 2, 7, 'The LaLiT, New Delhi', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, 4200.00, 4200.00, 'approved', 0, NULL, NULL, '2026-07-04 05:39:12', '2026-07-04 05:40:31', 0.00, 0),
+(5, 6, 7, 'Saffron Bagh Heritage Stay', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, 4200.00, 4200.00, 'approved', 0, NULL, NULL, '2026-07-04 06:32:41', '2026-07-04 06:36:00', 0.00, 0),
+(6, 7, 7, 'The Leela Palace New Delhi', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, 4200.00, 4200.00, 'approved', 0, NULL, NULL, '2026-07-04 07:07:40', '2026-07-08 11:03:59', 0.00, 0),
+(7, 8, 2, 'Splendid Sanctuary', 'saffron-bagh-heritage-stay', 'A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.', 4, 'Anjali Rathore', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '13:00:00', '11:00:00', 9, 28000.00, 28000.00, 'approved', 0, NULL, NULL, '2026-07-04 09:19:31', '2026-07-06 11:16:07', 0.00, 0),
+(8, 2, 2, 'Spiritual & Vastu-Aligned', 'spiritual-vastu-aligned', 'Lorem ipsum dolor sit amet, consectetur adipisicing elit. Odit vero, sunt quia ex temporibus perspiciatis veritatis quasi a praesentium laborum consequuntur, at soluta mollitia doloribus in, nulla ratione natus minus.', 4, 'Rajat Yadav', '+91 98765 43210', 'stay@saffronbagh.com', 'www.saffronbagh.com', '11:00:00', '10:59:00', 4, 200.00, 200.00, 'approved', 0, NULL, NULL, '2026-07-10 06:42:33', '2026-07-10 06:45:58', 0.00, 0);
 
 -- --------------------------------------------------------
 
@@ -461,6 +474,39 @@ INSERT INTO `property_policies` (`id`, `property_id`, `cancellation_policy`, `ho
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `property_reviews`
+--
+
+CREATE TABLE `property_reviews` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `booking_id` bigint(20) UNSIGNED NOT NULL,
+  `property_id` bigint(20) NOT NULL,
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `rating` tinyint(4) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `review` text NOT NULL,
+  `is_anonymous` tinyint(1) DEFAULT 0,
+  `status` enum('pending','approved','rejected') DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `property_review_images`
+--
+
+CREATE TABLE `property_review_images` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `review_id` bigint(20) UNSIGNED NOT NULL,
+  `image` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `property_rules`
 --
 
@@ -540,14 +586,14 @@ CREATE TABLE `rooms` (
 --
 
 INSERT INTO `rooms` (`id`, `property_id`, `room_name`, `room_type`, `room_category`, `max_adults`, `max_children`, `total_rooms`, `available_rooms`, `room_size`, `room_size_unit`, `private_bathroom`, `balcony`, `air_conditioning`, `description`) VALUES
-(6, 1, 'Heritage Garden Room', 'Deluxe', 'private', 1, 1, 6, 4, 210, 'sqft', 1, 0, 1, NULL),
+(6, 1, 'Heritage Garden Room', 'Deluxe', 'private', 1, 1, 6, 1, 210, 'sqft', 1, 0, 1, NULL),
 (7, 1, 'Backpacker Mixed Dorm', 'Dormitory', 'dorm', 1, 0, 1, 1, 360, 'sqft', 0, 0, 1, NULL),
 (8, 3, 'Heritage Garden Room', 'Deluxe', 'private', 2, 1, 6, 4, 280, 'sqft', 1, 0, 1, NULL),
 (10, 4, 'Heritage Garden Room', 'Deluxe', 'private', 2, 1, 6, 4, 280, 'sqft', 1, 0, 1, NULL),
 (13, 5, 'Heritage Garden Room', 'Deluxe', 'private', 2, 1, 6, 4, 280, 'sqft', 1, 0, 1, NULL),
 (14, 6, 'Heritage Garden Room', 'Deluxe', 'private', 2, 1, 6, 4, 280, 'sqft', 1, 0, 1, NULL),
 (15, 7, 'Entire Saffron Bagh Villa', 'Gues ', 'private', 10, 4, 1, 1, 3200, 'sqft', 0, 1, 1, NULL),
-(16, 8, 'Heritage Garden Room', 'Deluxe', 'whole_property', 2, 1, 6, 4, 280, 'sqft', 1, 0, 1, NULL);
+(16, 8, 'Heritage Garden Room', 'Deluxe', 'whole_property', 2, 1, 6, 3, 280, 'sqft', 1, 0, 1, NULL);
 
 -- --------------------------------------------------------
 
@@ -563,6 +609,32 @@ CREATE TABLE `room_availability` (
   `blocked_rooms` int(11) DEFAULT 0,
   `special_price` decimal(10,2) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `room_availability`
+--
+
+INSERT INTO `room_availability` (`id`, `room_id`, `available_date`, `available_rooms`, `blocked_rooms`, `special_price`) VALUES
+(1, 6, '2026-07-11', 4, 3, NULL),
+(2, 16, '2026-07-11', 4, 1, NULL),
+(5, 6, '2026-07-12', 2, 1, NULL),
+(6, 6, '2026-07-13', 2, 1, NULL),
+(7, 6, '2026-07-14', 2, 1, NULL),
+(8, 6, '2026-07-15', 2, 1, NULL),
+(9, 6, '2026-07-16', 2, 1, NULL),
+(10, 6, '2026-07-17', 2, 1, NULL),
+(11, 6, '2026-07-18', 2, 1, NULL),
+(12, 6, '2026-07-19', 2, 1, NULL),
+(13, 6, '2026-07-20', 2, 1, NULL),
+(14, 6, '2026-07-21', 2, 1, NULL),
+(15, 6, '2026-07-22', 2, 1, NULL),
+(16, 6, '2026-07-23', 2, 1, NULL),
+(17, 6, '2026-07-24', 2, 1, NULL),
+(18, 6, '2026-07-25', 2, 1, NULL),
+(19, 6, '2026-07-26', 2, 1, NULL),
+(20, 6, '2026-07-27', 2, 1, NULL),
+(21, 6, '2026-07-28', 2, 1, NULL),
+(22, 6, '2026-07-29', 2, 1, NULL);
 
 -- --------------------------------------------------------
 
@@ -687,10 +759,7 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`session_id`, `expires`, `data`) VALUES
-('EuhQTbO9ejrKsxipqNtSZvxkp7WAagBr', 1784272875, '{\"cookie\":{\"originalMaxAge\":604800000,\"expires\":\"2026-07-17T06:39:21.528Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\",\"sameSite\":\"lax\"},\"adminId\":1}'),
-('F6hZyDDQD9-7PaBtXv7RjbQHfhBO_WWw', 1784272894, '{\"cookie\":{\"originalMaxAge\":604800000,\"expires\":\"2026-07-17T07:19:53.042Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\",\"sameSite\":\"lax\"},\"vendorId\":1}'),
-('ZK_SOEyNcRGvNZBD4aBUaDIVD1-DbEkZ', 1783941176, '{\"cookie\":{\"originalMaxAge\":604800000,\"expires\":\"2026-07-13T11:12:53.000Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\",\"sameSite\":\"lax\"},\"vendorId\":2}'),
-('iWxS3xnsvjD-eMM0wbHni_6GPR7ToyNT', 1783791951, '{\"cookie\":{\"originalMaxAge\":604800000,\"expires\":\"2026-07-11T09:15:27.234Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\",\"sameSite\":\"lax\"},\"vendorId\":8}');
+('O2y3xCjARRJTtuCvaQPU2Kz7CyOxz0t3', 1784893274, '{\"cookie\":{\"originalMaxAge\":604800000,\"expires\":\"2026-07-24T08:21:00.146Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\",\"sameSite\":\"lax\"},\"vendorId\":1,\"adminId\":1}');
 
 -- --------------------------------------------------------
 
@@ -753,7 +822,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `phone`, `country_code`, `password`, `profile_image`, `gender`, `date_of_birth`, `google_id`, `apple_id`, `email_verified`, `phone_verified`, `status`, `last_login_at`, `created_at`, `updated_at`) VALUES
-(1, 'Rajat Yadav', NULL, 'testing3@gmail.com', '9310155405', '+91', '$2b$10$jATx9lWIotHgLnJNhOaqH.WgEvqAoYHwFiR3okHLr.EF/DYhVuqtm', NULL, NULL, NULL, NULL, NULL, 0, 0, 'active', '2026-07-09 17:40:14', '2026-07-08 06:51:36', '2026-07-09 12:10:14');
+(1, 'Rajat', 'Yadav', 'testing3@gmail.com', '9310155405', '+91', '$2b$10$jATx9lWIotHgLnJNhOaqH.WgEvqAoYHwFiR3okHLr.EF/DYhVuqtm', NULL, NULL, NULL, NULL, NULL, 0, 0, 'active', '2026-07-17 17:31:38', '2026-07-08 06:51:36', '2026-07-17 12:01:38');
 
 -- --------------------------------------------------------
 
@@ -793,7 +862,20 @@ INSERT INTO `user_refresh_tokens` (`id`, `user_id`, `refresh_token`, `device_typ
 (14, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzNTA5OTQ2LCJleHAiOjE3ODYxMDE5NDZ9.oFOF2_XcjRJsvfZHJUSDLDWSfEsVNe2yHGNyMkxWwag', 'android', NULL, NULL, '2026-08-07 16:55:46', '2026-07-08 11:25:46'),
 (15, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzNTc4ODc0LCJleHAiOjE3ODYxNzA4NzR9.3Aq_c78ln8d5Fo62EP7bNPbGTHgRe3OTMWpbwykkmqw', 'android', NULL, NULL, '2026-08-08 12:04:34', '2026-07-09 06:34:34'),
 (16, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzNTk2MTQ3LCJleHAiOjE3ODYxODgxNDd9.iJFTGneLRLlEOICPeeL1sDQhjr4ph7WvB5Hyio_kde0', 'android', NULL, NULL, '2026-08-08 16:52:27', '2026-07-09 11:22:27'),
-(17, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzNTk5MDE0LCJleHAiOjE3ODYxOTEwMTR9.pfZdVZz5qQXqJGclwDj5tbas9O1-fydWpJekUiMM360', 'android', NULL, NULL, '2026-08-08 17:40:14', '2026-07-09 12:10:14');
+(17, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzNTk5MDE0LCJleHAiOjE3ODYxOTEwMTR9.pfZdVZz5qQXqJGclwDj5tbas9O1-fydWpJekUiMM360', 'android', NULL, NULL, '2026-08-08 17:40:14', '2026-07-09 12:10:14'),
+(18, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzNjcwMDA2LCJleHAiOjE3ODYyNjIwMDZ9.y3AUtL5aDSPmUEiQIMOgLcdarxr_7sclozIfl8xh7YI', 'android', NULL, NULL, '2026-08-09 13:23:26', '2026-07-10 07:53:26'),
+(19, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzNjgxMTk2LCJleHAiOjE3ODYyNzMxOTZ9.d7k1FTAS9-f4YZVI8lrj3JU9A5cBvLChxIK5djap8eY', 'android', NULL, NULL, '2026-08-09 16:29:56', '2026-07-10 10:59:56'),
+(20, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzNjgyNjc0LCJleHAiOjE3ODYyNzQ2NzR9.vHfBePS-ihq3-_Jz64vcQz5hKVl5fcFXwcT7RheRh20', 'android', NULL, NULL, '2026-08-09 16:54:34', '2026-07-10 11:24:34'),
+(21, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzNjgzNjUxLCJleHAiOjE3ODYyNzU2NTF9.9OiEibIZi0JA16i_JHNS6kMazoanUcmF8R7ABq6QxIA', 'android', NULL, NULL, '2026-08-09 17:10:51', '2026-07-10 11:40:51'),
+(22, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzNjg0Njc3LCJleHAiOjE3ODYyNzY2Nzd9.JW16_YgChJ_CVtnzeGryA_sNbJYY_tGZbaSwf-sHEsg', 'android', NULL, NULL, '2026-08-09 17:27:57', '2026-07-10 11:57:57'),
+(23, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzNjg1OTE4LCJleHAiOjE3ODYyNzc5MTh9.A7toD_PgATvaz9ohUrBAQ2r6Qe_5zb3aY8W9s4jJIvo', 'android', NULL, NULL, '2026-08-09 17:48:38', '2026-07-10 12:18:38'),
+(24, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzOTM1ODQyLCJleHAiOjE3ODY1Mjc4NDJ9.Uz6NQRejJCgSJFAN5m8hFLDGlTs0uqSmBXNZOXQbk9I', 'android', NULL, NULL, '2026-08-12 15:14:02', '2026-07-13 09:44:02'),
+(25, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzOTM2ODg4LCJleHAiOjE3ODY1Mjg4ODh9.nFCKRV9n7zuuHzVZW2BQAf0N41vLoCs872sO-t1PYCU', 'android', NULL, NULL, '2026-08-12 15:31:28', '2026-07-13 10:01:28'),
+(26, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgzOTM3MjI3LCJleHAiOjE3ODY1MjkyMjd9.0rDxJhGXGoCSJb6edIvqHTuddgTH_6oEt-k33AuJlUQ', 'android', NULL, NULL, '2026-08-12 15:37:07', '2026-07-13 10:07:07'),
+(27, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzg0Mjc1NjMwLCJleHAiOjE3ODY4Njc2MzB9.f6tfMB7x-4ZKkYzhiX8YwF2Cb8yoQ9aEOldWsHn_6EA', 'android', NULL, NULL, '2026-08-16 13:37:10', '2026-07-17 08:07:10'),
+(28, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzg0Mjc5MjIwLCJleHAiOjE3ODY4NzEyMjB9.8Mt7CTb0kJrkGR438lQ1xF2w7QEt2Z3Ge7OynlCUrfs', 'android', NULL, NULL, '2026-08-16 14:37:00', '2026-07-17 09:07:00'),
+(29, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzg0Mjg5NjU3LCJleHAiOjE3ODY4ODE2NTd9.iCoIEAlR3HYW1qRW0Et9pSaB-wVKDafRhlZIRMtjZyg', 'android', NULL, NULL, '2026-08-16 17:30:57', '2026-07-17 12:00:57'),
+(30, 1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzg0Mjg5Njk4LCJleHAiOjE3ODY4ODE2OTh9.8y_FFD670hk-KL2UVs9_qZjddRhqam6P_FpAPXqx7GI', 'android', NULL, NULL, '2026-08-16 17:31:38', '2026-07-17 12:01:38');
 
 -- --------------------------------------------------------
 
@@ -829,8 +911,8 @@ CREATE TABLE `vendors` (
 --
 
 INSERT INTO `vendors` (`id`, `first_name`, `last_name`, `email`, `phone`, `country_code`, `password`, `otp`, `otp_expiry`, `phone_verified_at`, `email_verified_at`, `profile_image`, `business_name`, `gst_number`, `pan_number`, `status`, `last_login_at`, `remember_token`, `created_at`, `updated_at`) VALUES
-(1, 'Rajat ', 'Yadav ', 'aryanrao9311@gmail.com', '9310155405', '+91', '$2b$10$2b3bz8hyAgtZFRkppscljezSoQl8wtGcBlwdLdopd8yaG5BCNUZMS', NULL, NULL, NULL, NULL, NULL, 'Web Loxic', NULL, NULL, 'active', '2026-07-10 07:19:53', NULL, NULL, NULL),
-(2, 'Rajat ', 'Yadav', 'testing@gmail.com', '9876543210', '+91', '$2b$10$SzkRQx88n9fDZDGFWQzDEerlQ.YnkGgM3UdPND5mUNuvNn/j7eBY6', NULL, NULL, NULL, NULL, NULL, 'Web Loxic ', NULL, NULL, 'active', '2026-07-10 06:28:28', NULL, NULL, NULL),
+(1, 'Rajat ', 'Yadav ', 'aryanrao9311@gmail.com', '9310155405', '+91', '$2b$10$2b3bz8hyAgtZFRkppscljezSoQl8wtGcBlwdLdopd8yaG5BCNUZMS', NULL, NULL, NULL, NULL, NULL, 'Web Loxic', NULL, NULL, 'active', '2026-07-10 11:47:58', NULL, NULL, NULL),
+(2, 'Rajat ', 'Yadav', 'testing@gmail.com', '9876543210', '+91', '$2b$10$SzkRQx88n9fDZDGFWQzDEerlQ.YnkGgM3UdPND5mUNuvNn/j7eBY6', NULL, NULL, NULL, NULL, NULL, 'Web Loxic ', NULL, NULL, 'active', '2026-07-10 11:47:26', NULL, NULL, NULL),
 (3, 'Raushan ', 'Kumar ', 'testing2@gmail.com', '9576486324', '+91', '$2b$10$Pe1KZDM4GC4uXhOO7v0VjeJl3gikpBkneuLbQ88Ifz9XUTuEddEDC', NULL, NULL, NULL, NULL, NULL, 'Reborn', NULL, NULL, 'active', NULL, NULL, NULL, NULL),
 (4, 'Testing ', '5', 'testingBussiness@gmail.com', '9314578457', '+91', '$2b$10$ZBlxB5BTyn8TVOaNwpatqu53ZnKXPvrHObXgrS3dQyDe6p/KlOLdm', NULL, NULL, NULL, NULL, NULL, 'Testing Business Name ', NULL, NULL, 'active', NULL, NULL, NULL, NULL),
 (5, 'Testing 6', 'last ', 'testing6@gmail.com', '9134575785', '+91', '$2b$10$5eCl57EFSweFbsWT.fGPAeHONZXNT4Oqy8nk08LNJ2owEmSIeJXbq', NULL, NULL, NULL, NULL, NULL, 'testing 6 business', NULL, NULL, 'active', NULL, NULL, NULL, NULL),
@@ -887,6 +969,13 @@ CREATE TABLE `wishlists` (
   `property_id` bigint(20) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `wishlists`
+--
+
+INSERT INTO `wishlists` (`id`, `user_id`, `property_id`, `created_at`) VALUES
+(1, 1, 1, '2026-07-13 09:18:31');
 
 --
 -- Indexes for dumped tables
@@ -1001,6 +1090,22 @@ ALTER TABLE `property_policies`
   ADD KEY `property_id` (`property_id`);
 
 --
+-- Indexes for table `property_reviews`
+--
+ALTER TABLE `property_reviews`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_review` (`booking_id`),
+  ADD KEY `fk_review_property` (`property_id`),
+  ADD KEY `fk_review_user` (`user_id`);
+
+--
+-- Indexes for table `property_review_images`
+--
+ALTER TABLE `property_review_images`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `review_id` (`review_id`);
+
+--
 -- Indexes for table `property_rules`
 --
 ALTER TABLE `property_rules`
@@ -1104,6 +1209,7 @@ ALTER TABLE `vendor_addresses`
   ADD KEY `idx_country` (`country_id`),
   ADD KEY `idx_state` (`state_id`),
   ADD KEY `idx_city` (`city_id`);
+
 --
 -- Indexes for table `wishlists`
 --
@@ -1112,152 +1218,195 @@ ALTER TABLE `wishlists`
   ADD UNIQUE KEY `user_property_unique` (`user_id`,`property_id`),
   ADD KEY `user_id` (`user_id`),
   ADD KEY `property_id` (`property_id`);
+
 --
 -- AUTO_INCREMENT for dumped tables
 --
+
 --
 -- AUTO_INCREMENT for table `admins`
 --
 ALTER TABLE `admins`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
 --
 -- AUTO_INCREMENT for table `amenities`
 --
 ALTER TABLE `amenities`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+
 --
 -- AUTO_INCREMENT for table `bookings`
 --
 ALTER TABLE `bookings`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
 --
 -- AUTO_INCREMENT for table `booking_payments`
 --
 ALTER TABLE `booking_payments`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT for table `booking_rooms`
 --
 ALTER TABLE `booking_rooms`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
 --
 -- AUTO_INCREMENT for table `cities`
 --
 ALTER TABLE `cities`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+
 --
 -- AUTO_INCREMENT for table `countries`
 --
 ALTER TABLE `countries`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
 --
 -- AUTO_INCREMENT for table `properties`
 --
 ALTER TABLE `properties`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
 --
 -- AUTO_INCREMENT for table `property_addresses`
 --
 ALTER TABLE `property_addresses`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
 --
 -- AUTO_INCREMENT for table `property_amenities`
 --
 ALTER TABLE `property_amenities`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=84;
+
 --
 -- AUTO_INCREMENT for table `property_images`
 --
 ALTER TABLE `property_images`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+
 --
 -- AUTO_INCREMENT for table `property_listing_progress`
 --
 ALTER TABLE `property_listing_progress`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
 --
 -- AUTO_INCREMENT for table `property_policies`
 --
 ALTER TABLE `property_policies`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT for table `property_reviews`
+--
+ALTER TABLE `property_reviews`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `property_review_images`
+--
+ALTER TABLE `property_review_images`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
 --
 -- AUTO_INCREMENT for table `property_rules`
 --
 ALTER TABLE `property_rules`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
 --
 -- AUTO_INCREMENT for table `property_types`
 --
 ALTER TABLE `property_types`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+
 --
 -- AUTO_INCREMENT for table `rooms`
 --
 ALTER TABLE `rooms`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+
 --
 -- AUTO_INCREMENT for table `room_availability`
 --
 ALTER TABLE `room_availability`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+
 --
 -- AUTO_INCREMENT for table `room_beds`
 --
 ALTER TABLE `room_beds`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+
 --
 -- AUTO_INCREMENT for table `room_dorm_beds`
 --
 ALTER TABLE `room_dorm_beds`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
 --
 -- AUTO_INCREMENT for table `room_images`
 --
 ALTER TABLE `room_images`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+
 --
 -- AUTO_INCREMENT for table `room_prices`
 --
 ALTER TABLE `room_prices`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+
 --
 -- AUTO_INCREMENT for table `states`
 --
 ALTER TABLE `states`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
 --
 -- AUTO_INCREMENT for table `user_refresh_tokens`
 --
 ALTER TABLE `user_refresh_tokens`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+
 --
 -- AUTO_INCREMENT for table `vendors`
 --
 ALTER TABLE `vendors`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
 --
 -- AUTO_INCREMENT for table `vendor_addresses`
 --
 ALTER TABLE `vendor_addresses`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
 --
 -- AUTO_INCREMENT for table `wishlists`
 --
 ALTER TABLE `wishlists`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
 --
 -- Constraints for dumped tables
 --
+
 --
 -- Constraints for table `admins`
 --
 ALTER TABLE `admins`
   ADD CONSTRAINT `fk_admin_created_by` FOREIGN KEY (`created_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL;
+
 --
 -- Constraints for table `bookings`
 --
@@ -1265,89 +1414,120 @@ ALTER TABLE `bookings`
   ADD CONSTRAINT `fk_bookings_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`),
   ADD CONSTRAINT `fk_bookings_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_bookings_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`);
+
 --
 -- Constraints for table `cities`
 --
 ALTER TABLE `cities`
   ADD CONSTRAINT `fk_cities_country` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_cities_state` FOREIGN KEY (`state_id`) REFERENCES `states` (`id`) ON DELETE CASCADE;
+
 --
 -- Constraints for table `properties`
 --
 ALTER TABLE `properties`
   ADD CONSTRAINT `properties_ibfk_1` FOREIGN KEY (`property_type_id`) REFERENCES `property_types` (`id`);
+
 --
 -- Constraints for table `property_addresses`
 --
 ALTER TABLE `property_addresses`
   ADD CONSTRAINT `property_addresses_ibfk_1` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`);
+
 --
 -- Constraints for table `property_amenities`
 --
 ALTER TABLE `property_amenities`
   ADD CONSTRAINT `property_amenities_ibfk_1` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`),
   ADD CONSTRAINT `property_amenities_ibfk_2` FOREIGN KEY (`amenity_id`) REFERENCES `amenities` (`id`);
+
 --
 -- Constraints for table `property_images`
 --
 ALTER TABLE `property_images`
   ADD CONSTRAINT `property_images_ibfk_1` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`);
+
 --
 -- Constraints for table `property_listing_progress`
 --
 ALTER TABLE `property_listing_progress`
   ADD CONSTRAINT `property_listing_progress_ibfk_1` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `property_listing_progress_ibfk_2` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE;
+
 --
 -- Constraints for table `property_policies`
 --
 ALTER TABLE `property_policies`
   ADD CONSTRAINT `property_policies_ibfk_1` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`);
+
+--
+-- Constraints for table `property_reviews`
+--
+ALTER TABLE `property_reviews`
+  ADD CONSTRAINT `fk_review_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_review_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_review_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `property_review_images`
+--
+ALTER TABLE `property_review_images`
+  ADD CONSTRAINT `property_review_images_ibfk_1` FOREIGN KEY (`review_id`) REFERENCES `property_reviews` (`id`) ON DELETE CASCADE;
+
 --
 -- Constraints for table `property_rules`
 --
 ALTER TABLE `property_rules`
   ADD CONSTRAINT `property_rules_ibfk_1` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`);
+
 --
 -- Constraints for table `rooms`
 --
 ALTER TABLE `rooms`
   ADD CONSTRAINT `fk_rooms_property` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`) ON DELETE CASCADE;
+
 --
 -- Constraints for table `room_availability`
 --
 ALTER TABLE `room_availability`
   ADD CONSTRAINT `room_availability_ibfk_1` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`) ON DELETE CASCADE;
+
 --
 -- Constraints for table `room_beds`
 --
 ALTER TABLE `room_beds`
   ADD CONSTRAINT `room_beds_ibfk_1` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`) ON DELETE CASCADE;
+
 --
 -- Constraints for table `room_dorm_beds`
 --
 ALTER TABLE `room_dorm_beds`
   ADD CONSTRAINT `fk_room_dorm_beds` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`) ON DELETE CASCADE;
+
 --
 -- Constraints for table `room_images`
 --
 ALTER TABLE `room_images`
   ADD CONSTRAINT `fk_room_images` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`) ON DELETE CASCADE;
+
 --
 -- Constraints for table `room_prices`
 --
 ALTER TABLE `room_prices`
   ADD CONSTRAINT `room_prices_ibfk_1` FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`) ON DELETE CASCADE;
+
 --
 -- Constraints for table `states`
 --
 ALTER TABLE `states`
   ADD CONSTRAINT `fk_states_country` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`) ON DELETE CASCADE;
+
 --
 -- Constraints for table `user_refresh_tokens`
 --
 ALTER TABLE `user_refresh_tokens`
   ADD CONSTRAINT `user_refresh_tokens_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
 --
 -- Constraints for table `vendor_addresses`
 --
@@ -1357,6 +1537,7 @@ ALTER TABLE `vendor_addresses`
   ADD CONSTRAINT `fk_vendor_addresses_state` FOREIGN KEY (`state_id`) REFERENCES `states` (`id`),
   ADD CONSTRAINT `fk_vendor_addresses_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE;
 COMMIT;
+
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
