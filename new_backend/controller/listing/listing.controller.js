@@ -1,5 +1,11 @@
 import pool from "../../config/db.js";
-import { deleteOldRooms, saveCompleteRoom, updateListingProgress, updatePropertyPriceRange, validateRooms } from "../../services/rooms.service.js";
+import {
+    deleteOldRooms,
+    saveCompleteRoom,
+    updateListingProgress,
+    updatePropertyPriceRange,
+    validateRooms,
+} from "../../services/rooms.service.js";
 
 export const getIncompleteListing = async (req, res) => {
     try {
@@ -35,7 +41,8 @@ export const getIncompleteListing = async (req, res) => {
             `SELECT * FROM property_addresses WHERE property_id=?`,
             [propertyId]
         );
-        // Images
+        // Images — this is now the FULL photo pool: used both as the
+        // property gallery AND as the source list for the room image picker.
         const [images] = await pool.execute(
             `SELECT * FROM property_images WHERE property_id=? ORDER BY sort_order ASC`,
             [propertyId]
@@ -82,8 +89,15 @@ export const getIncompleteListing = async (req, res) => {
                 `SELECT * FROM room_dorm_beds WHERE room_id IN (${placeholders})`,
                 roomIds
             );
-            const [roomImages] = await pool.query(
-                `SELECT * FROM room_images WHERE room_id IN (${placeholders}) ORDER BY sort_order ASC`,
+            // Room images now come through the link table, joined back to
+            // property_images so we still get the actual filename.
+            const [roomImageLinks] = await pool.query(
+                `SELECT rpi.room_id, rpi.is_cover, rpi.sort_order,
+                        pi.id AS property_image_id, pi.image
+                 FROM room_property_images rpi
+                 JOIN property_images pi ON pi.id = rpi.property_image_id
+                 WHERE rpi.room_id IN (${placeholders})
+                 ORDER BY rpi.sort_order ASC`,
                 roomIds
             );
 
@@ -91,7 +105,10 @@ export const getIncompleteListing = async (req, res) => {
                 ...room,
                 beds: beds.filter((b) => b.room_id === room.id),
                 dorm_beds: dormBeds.filter((b) => b.room_id === room.id),
-                images: roomImages.filter((i) => i.room_id === room.id)
+                // Always an array — never undefined — so the frontend's
+                // `room.images || []` fallback isn't the only thing standing
+                // between this and a crash on the client.
+                images: roomImageLinks.filter((i) => i.room_id === room.id)
             }));
         }
 
@@ -124,8 +141,6 @@ export const saveBasicInformation = async (req, res) => {
 
         await connection.beginTransaction();
         const vendor_id = req.vendor.id
-                // const vendorId = req.vendor.id;
-
 
         const {
             property_id,
@@ -453,16 +468,39 @@ export const saveLocation = async (req, res) => {
 };
 
 
-
-
-
-
-
+/**
+ * savePropertyImages — FIXED.
+ *
+ * Two bugs here previously:
+ *
+ * 1. DATA LOSS: this used to run
+ *      DELETE FROM property_images WHERE property_id=?
+ *    before every insert. Since the frontend only ever uploads NEW files
+ *    (previewImages.filter(img => img.file)), a vendor who saved 10 photos,
+ *    came back later, and added 2 more would have their original 10 wiped
+ *    out and replaced with just the 2 new ones. Worse, room_property_images
+ *    has ON DELETE CASCADE on property_image_id, so any room that already
+ *    had photos assigned would silently lose them too — possibly dropping
+ *    a room below the "at least 1 photo" requirement enforced elsewhere.
+ *    Fix: never delete existing rows here. Just insert the new files,
+ *    continuing sort_order from wherever the existing photos left off.
+ *
+ * 2. MISSING RESPONSE DATA: this used to respond with only
+ *      { success: true, message: "..." }
+ *    but the frontend's savePhotos() reads `response.data.images` and uses
+ *    it to replace local blob-preview objects (with fake local uid() ids)
+ *    with the real DB rows (real property_images.id + filename). Without
+ *    `images` in the response, the frontend kept using fake local ids,
+ *    which would then fail the ownership check in saveRooms (or silently
+ *    write bogus references) once the vendor got to Step 7.
+ *    Fix: after inserting, SELECT and return the full current image list
+ *    for the property (old + new), which is exactly what the frontend
+ *    expects to swap into state.
+ */
 export const savePropertyImages = async (req, res) => {
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
-        console.log(req.body)
         const { property_id } = req.body;
         if (!property_id) {
             await connection.rollback();
@@ -472,19 +510,34 @@ export const savePropertyImages = async (req, res) => {
             });
         }
         if (!req.files || req.files.length === 0) {
+            await connection.rollback();
             return res.status(422).json({
                 success: false,
                 message: "Please upload at least one image."
             });
         }
-        // Delete previous images
-        await connection.execute(
-            `DELETE FROM property_images
+
+        // How many photos (and whether a cover) already exist for this
+        // property — needed so we don't clobber sort_order or steal the
+        // cover flag from an existing photo.
+        const [existingRows] = await connection.execute(
+            `SELECT COUNT(*) AS cnt,
+                    COALESCE(MAX(sort_order), -1) AS max_sort,
+                    SUM(is_cover) AS cover_count
+             FROM property_images
              WHERE property_id=?`,
             [property_id]
         );
+        const existingCount = Number(existingRows[0].cnt) || 0;
+        let nextSortOrder = Number(existingRows[0].max_sort) + 1;
+        const hasExistingCover = Number(existingRows[0].cover_count) > 0;
+
         for (let i = 0; i < req.files.length; i++) {
             const image = req.files[i];
+            // Only make the very first ever-uploaded photo the cover.
+            // If photos already exist (with or without a cover flag set),
+            // never flip an existing cover off from here.
+            const isCover = !hasExistingCover && existingCount === 0 && i === 0 ? 1 : 0;
             await connection.execute(
                 `INSERT INTO property_images
                 (
@@ -500,11 +553,13 @@ export const savePropertyImages = async (req, res) => {
                 [
                     property_id,
                     image.filename,
-                    i === 0 ? 1 : 0,
-                    i
+                    isCover,
+                    nextSortOrder
                 ]
             );
+            nextSortOrder += 1;
         }
+
         await connection.execute(
             `UPDATE property_listing_progress
             SET
@@ -521,10 +576,23 @@ export const savePropertyImages = async (req, res) => {
                 property_id
             ]
         );
+
+        // Return the FULL current photo list (existing + newly inserted) so
+        // the frontend can swap out local blob previews for real DB rows
+        // without losing anything that was already saved.
+        const [allImages] = await connection.execute(
+            `SELECT id, image, is_cover, sort_order
+             FROM property_images
+             WHERE property_id=?
+             ORDER BY sort_order ASC`,
+            [property_id]
+        );
+
         await connection.commit();
         return res.json({
             success: true,
-            message: "Photos uploaded successfully."
+            message: "Photos uploaded successfully.",
+            images: allImages
         });
     } catch (error) {
         await connection.rollback();
@@ -536,72 +604,6 @@ export const savePropertyImages = async (req, res) => {
         connection.release();
     }
 };
-
-
-
-
-// export const saveAmenities = async (req, res) => {
-//     const connection = await db.getConnection();
-//     try {
-//         await connection.beginTransaction();
-//         const { property_id, amenities } = req.body;
-//         if (!property_id) {
-//             return res.status(422).json({
-//                 success: false,
-//                 message: "Property ID is required."
-//             });
-//         }
-//         await connection.execute(
-//             `DELETE FROM property_amenities
-//              WHERE property_id=?`,
-//             [property_id]
-//         );
-//         for (const amenityId of amenities) {
-//             await connection.execute(
-//                 `INSERT INTO property_amenities
-//                 (
-//                     property_id,
-//                     amenity_id
-//                 )
-//                 VALUES
-//                 (?,?)`,
-//                 [
-//                     property_id,
-//                     amenityId
-//                 ]
-//             );
-//         }
-//         await connection.execute(
-//             `UPDATE property_listing_progress
-//             SET
-//                 current_step=5,
-//                 completed_percentage=60,
-//                 progress=JSON_SET(
-//                     progress,
-//                     '$.amenities',
-//                     true
-//                 ),
-//                 last_saved_at=NOW()
-//             WHERE property_id=?`,
-//             [
-//                 property_id
-//             ]
-//         );
-//         await connection.commit();
-//         return res.json({
-//             success: true,
-//             message: "Amenities saved successfully."
-//         });
-//     } catch (error) {
-//         await connection.rollback();
-//         return res.status(500).json({
-//             success: false,
-//             message: error.message
-//         });
-//     } finally {
-//         connection.release();
-//     }
-// };
 
 
 export const saveAmenities = async (req, res) => {
@@ -856,41 +858,48 @@ export const savePoliciesAndRules = async (req, res) => {
 };
 
 
-
-
+/**
+ * saveRooms — rooms arrive as plain JSON, each with `image_ids` pointing at
+ * rows the vendor already uploaded via /photos. We verify every referenced
+ * id actually belongs to this property before touching the DB, so a vendor
+ * can't link another property's photo by guessing an id.
+ */
 export const saveRooms = async (req, res) => {
     const connection = await pool.getConnection();
     try {
-        const { property_id } = req.body;
+        const { property_id, rooms } = req.body;
+
         if (!property_id) {
             return res.status(400).json({ success: false, message: "Property ID is required." });
         }
-
-        let rooms;
-        try {
-            rooms = JSON.parse(req.body.rooms);
-        } catch {
+        if (!Array.isArray(rooms)) {
             return res.status(400).json({ success: false, message: "Invalid rooms data." });
         }
 
         validateRooms(rooms);
 
-        // group uploaded files by room index (fieldname: room_<idx>_images)
-        const filesByRoom = {};
-        (req.files || []).forEach((file) => {
-            const match = file.fieldname.match(/^room_(\d+)_images$/);
-            if (match) {
-                const idx = Number(match[1]);
-                (filesByRoom[idx] ||= []).push(file);
+        const allImageIds = [...new Set(rooms.flatMap((r) => r.image_ids || []))];
+        if (allImageIds.length > 0) {
+            const placeholders = allImageIds.map(() => "?").join(",");
+            const [owned] = await pool.query(
+                `SELECT id FROM property_images WHERE property_id = ? AND id IN (${placeholders})`,
+                [property_id, ...allImageIds]
+            );
+            const ownedIds = new Set(owned.map((r) => r.id));
+            const invalid = allImageIds.filter((id) => !ownedIds.has(id));
+            if (invalid.length > 0) {
+                return res.status(422).json({
+                    success: false,
+                    message: `These image ids don't belong to this property: ${invalid.join(", ")}`
+                });
             }
-        });
+        }
 
         await connection.beginTransaction();
         await deleteOldRooms(connection, property_id);
 
-        for (let i = 0; i < rooms.length; i++) {
-            rooms[i].images = filesByRoom[i] || [];
-            await saveCompleteRoom(connection, property_id, rooms[i]);
+        for (const room of rooms) {
+            await saveCompleteRoom(connection, property_id, room);
         }
 
         await updatePropertyPriceRange(connection, property_id);

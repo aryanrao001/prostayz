@@ -12,7 +12,7 @@ import {
     Shirt, Plane, Bike, Dog, Lock, Sofa, LampDesk, PlugZap, Laptop,
     Presentation, Briefcase, Gamepad2, Accessibility, Landmark,
     HeartPulse, Package, Wind, Monitor, BrushCleaning, ImagePlus,
-    User, FileCheck2,
+    User, FileCheck2, ImageOff,
 } from "lucide-react";
 
 import axios from "axios";
@@ -36,17 +36,6 @@ const amenityIcons: Record<string, LucideIcon> = {
     Package, Wind, Monitor
 };
 
-const AMENITY_LIST = [
-    { id: 1, name: "Free Wi-Fi", icon: Wifi },
-    { id: 2, name: "Parking", icon: Car },
-    { id: 3, name: "Restaurant", icon: Utensils },
-    { id: 4, name: "Gym", icon: Dumbbell },
-    { id: 5, name: "Swimming Pool", icon: Waves },
-    { id: 6, name: "Air Conditioning", icon: Snowflake },
-    { id: 7, name: "Television", icon: Tv },
-    { id: 8, name: "Breakfast Included", icon: Coffee },
-];
-
 // Sub-steps within this "Property Listing" stage
 const STEPS = [
     { key: "type", label: "Property Type", icon: Hotel },
@@ -68,12 +57,11 @@ const MACRO_STEPS = [
 ];
 const CURRENT_MACRO_STEP = 2; // 0-indexed — "Property Listing" is step 4 of 4
 
-const DEMO_IMAGES = [
-    "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80",
-    "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=600&q=80",
-    "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=600&q=80",
-    "https://images.unsplash.com/photo-1591088398332-8a7791972843?w=600&q=80",
-];
+// Property photo pool cap — matches the backend multer limit
+// (uploadPropertyImages.js: files: 25). This is now the WHOLE pool of
+// photos for the property; rooms in Step 7 pick 1-5 each from it.
+const MAX_PROPERTY_PHOTOS = 25;
+const MAX_ROOM_PHOTOS = 5;
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -95,13 +83,6 @@ const STATUS_STYLES: Record<string, string> = {
 
 type RoomCategory = "private" | "dorm" | "whole_property";
 type DormBedStatus = "available" | "blocked" | "maintenance";
-
-interface RoomImage {
-    id: string | number;
-    src: string;
-    is_cover: boolean;
-    file?: File; // present only for newly-selected local files not yet uploaded
-}
 
 interface Bed {
     id: string | number;
@@ -137,7 +118,11 @@ interface Room {
     weekend_price: number;
     extra_guest_price: number;
     tax: number;
-    images: RoomImage[];
+    // Rooms no longer carry their own uploaded files. They reference photos
+    // already uploaded for the property (previewImages) by id, plus which
+    // one of those is the room's cover shot.
+    image_ids: (string | number)[];
+    cover_image_id: string | number | null;
 }
 
 interface PropertyDetails {
@@ -179,9 +164,11 @@ interface Rules {
     children_allowed: boolean;
 }
 
-// FIX (Bug 2): a single unified image type — `file` is present only for
-// newly-picked local images that haven't been uploaded yet. Images that came
-// back from the server (already saved) simply won't have a `file`.
+// A single unified image type — `file` is present only for newly-picked
+// local images that haven't been uploaded yet. Images that came back from
+// the server (already saved) simply won't have a `file`, and their `id`
+// is the real property_images.id — which is exactly what rooms need to
+// reference in Step 7.
 interface PropertyImagePreview {
     id: string | number;
     src: string;
@@ -190,93 +177,130 @@ interface PropertyImagePreview {
 }
 
 /* ---------------------------------------------------------
-   DEMO SEED DATA (used only until real data is hydrated)
+   BLANK / EMPTY DEFAULTS
+   These used to be pre-filled demo content ("Saffron Bagh Heritage Stay",
+   3 fully-configured rooms, 5 pre-checked amenities). That's dangerous for
+   a real vendor: if they click through the wizard without editing every
+   field, they'd publish placeholder content as their real listing. Real
+   state now starts empty; demo generators below are only used when the
+   vendor explicitly adds a new room via the "+ Add room type" buttons.
 --------------------------------------------------------- */
 
-const DEMO_ROOM = (n: number): Room => ({
+const BLANK_DETAILS: PropertyDetails = {
+    property_name: "",
+    star_rating: 0,
+    contact_name: "",
+    contact_number: "",
+    email: "",
+    website: "",
+    check_in: "",
+    check_out: "",
+    total_rooms: "",
+    description: "",
+};
+
+const BLANK_ADDRESS: PropertyAddress = {
+    country: "India",
+    state: "",
+    city: "",
+    area: "",
+    address: "",
+    pincode: "",
+    landmark: "",
+    latitude: "",
+    longitude: "",
+};
+
+const BLANK_POLICIES: Policies = {
+    cancellation_policy: "",
+    house_rules: "",
+    refund_policy: "",
+};
+
+const BLANK_RULES: Rules = {
+    smoking_allowed: false,
+    pets_allowed: false,
+    parties_allowed: false,
+    couples_allowed: true,
+    children_allowed: true,
+};
+
+/* ---------------------------------------------------------
+   NEW-ROOM TEMPLATES (used only when the vendor clicks "+ Add room type")
+--------------------------------------------------------- */
+
+const NEW_PRIVATE_ROOM = (): Room => ({
     id: uid(),
     room_category: "private",
-    room_name: n === 0 ? "Heritage Garden Room" : "Lakeview Suite",
-    room_type: n === 0 ? "Deluxe" : "Suite",
-    max_adults: n === 0 ? 2 : 3,
-    max_children: 1,
-    total_rooms: n === 0 ? 6 : 3,
-    available_rooms: n === 0 ? 4 : 2,
-    room_size: n === 0 ? 280 : 420,
-    room_size_unit: "sqft",
-    private_bathroom: true,
-    balcony: n !== 0,
-    air_conditioning: true,
-    beds: n === 0
-        ? [{ id: uid(), bed_type: "Queen Bed", quantity: 1 }]
-        : [{ id: uid(), bed_type: "King Bed", quantity: 1 }, { id: uid(), bed_type: "Sofa Bed", quantity: 1 }],
-    dorm_beds: [],
-    price: n === 0 ? 4200 : 7800,
-    weekend_price: n === 0 ? 4800 : 9200,
-    extra_guest_price: n === 0 ? 600 : 900,
-    tax: n === 0 ? 12 : 18,
-    images: [
-        { id: uid(), src: DEMO_IMAGES[n % DEMO_IMAGES.length], is_cover: true },
-        { id: uid(), src: DEMO_IMAGES[(n + 1) % DEMO_IMAGES.length], is_cover: false },
-    ],
-});
-
-const DEMO_DORM_ROOM = (): Room => ({
-    id: uid(),
-    room_category: "dorm",
-    room_name: "Backpacker Mixed Dorm",
-    room_type: "Dormitory",
-    max_adults: 8,
+    room_name: "",
+    room_type: "",
+    max_adults: 2,
     max_children: 0,
     total_rooms: 1,
     available_rooms: 1,
-    room_size: 360,
+    room_size: 0,
+    room_size_unit: "sqft",
+    private_bathroom: true,
+    balcony: false,
+    air_conditioning: true,
+    beds: [{ id: uid(), bed_type: "Queen Bed", quantity: 1 }],
+    dorm_beds: [],
+    price: 0,
+    weekend_price: 0,
+    extra_guest_price: 0,
+    tax: 0,
+    image_ids: [],
+    cover_image_id: null,
+});
+
+const NEW_DORM_ROOM = (): Room => ({
+    id: uid(),
+    room_category: "dorm",
+    room_name: "",
+    room_type: "Dormitory",
+    max_adults: 0,
+    max_children: 0,
+    total_rooms: 1,
+    available_rooms: 1,
+    room_size: 0,
     room_size_unit: "sqft",
     private_bathroom: false,
     balcony: false,
     air_conditioning: true,
     beds: [],
     dorm_beds: [
-        { id: uid(), bed_label: "Bunk A - Top", bed_type: "Bunk - Top", status: "available", price: 950 },
-        { id: uid(), bed_label: "Bunk A - Bottom", bed_type: "Bunk - Bottom", status: "available", price: 1050 },
-        { id: uid(), bed_label: "Bunk B - Top", bed_type: "Bunk - Top", status: "available", price: 950 },
-        { id: uid(), bed_label: "Bunk B - Bottom", bed_type: "Bunk - Bottom", status: "blocked", price: 1050 },
+        { id: uid(), bed_label: "Bed 1", bed_type: "Bunk - Bottom", status: "available", price: 0 },
     ],
-    price: 950,
-    weekend_price: 1150,
+    price: 0,
+    weekend_price: 0,
     extra_guest_price: 0,
-    tax: 12,
-    images: [{ id: uid(), src: DEMO_IMAGES[2], is_cover: true }],
+    tax: 0,
+    image_ids: [],
+    cover_image_id: null,
 });
 
-const DEMO_VILLA_ROOM = (): Room => ({
+const NEW_VILLA_ROOM = (): Room => ({
     id: uid(),
     room_category: "whole_property",
-    room_name: "Entire Saffron Bagh Villa",
-    room_type: "Whole Villa",
-    max_adults: 10,
-    max_children: 4,
+    room_name: "",
+    room_type: "Whole Property",
+    max_adults: 2,
+    max_children: 0,
     total_rooms: 1,
     available_rooms: 1,
-    room_size: 3200,
+    room_size: 0,
     room_size_unit: "sqft",
     private_bathroom: true,
-    balcony: true,
+    balcony: false,
     air_conditioning: true,
-    beds: [
-        { id: uid(), bed_type: "King Bed", quantity: 3 },
-        { id: uid(), bed_type: "Queen Bed", quantity: 2 },
-        { id: uid(), bed_type: "Single Bed", quantity: 2 },
-    ],
+    beds: [{ id: uid(), bed_type: "Queen Bed", quantity: 1 }],
     dorm_beds: [],
-    price: 28000,
-    weekend_price: 34000,
-    extra_guest_price: 1500,
-    tax: 18,
-    images: [
-        { id: uid(), src: DEMO_IMAGES[0], is_cover: true },
-        { id: uid(), src: DEMO_IMAGES[3], is_cover: false },
-    ],
+    price: 0,
+    weekend_price: 0,
+    extra_guest_price: 0,
+    tax: 0,
+    image_ids: [],
+    cover_image_id: null,
 });
 
 /* ---------------------------------------------------------
@@ -398,71 +422,130 @@ function MacroStepTracker() {
 }
 
 /* ---------------------------------------------------------
+   ROOM PHOTO PICKER — grid of the property's uploaded photo pool.
+   Click a photo to toggle it in/out of this room's selection (max 5).
+   Click the star on a selected photo to make it this room's cover.
+
+   NOTE: `pool` and `selectedIds` default to [] below. Without these
+   defaults, any render where a room's image_ids/property images are
+   momentarily undefined (e.g. mid-hydration, or a stale room object from
+   a hot-reload) throws "Cannot read properties of undefined (reading
+   'length')" and crashes the whole step — which is exactly what you hit.
+--------------------------------------------------------- */
+
+function RoomPhotoPicker({
+    pool = [],
+    selectedIds = [],
+    coverId = null,
+    onToggle,
+    onSetCover,
+}: {
+    pool?: PropertyImagePreview[];
+    selectedIds?: (string | number)[];
+    coverId?: string | number | null;
+    onToggle: (imageId: string | number) => void;
+    onSetCover: (imageId: string | number) => void;
+}) {
+    const safePool = pool ?? [];
+    const safeSelectedIds = selectedIds ?? [];
+
+    if (safePool.length === 0) {
+        return (
+            <div className="flex items-center gap-2 text-[12.5px] text-[#B3AB99] py-3 px-1">
+                <ImageOff size={15} />
+                Upload property photos in the Photos step first — you'll pick from
+                them here.
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-2">
+                <p className="text-[11px] font-semibold tracking-wide uppercase text-[#6B6354]">
+                    Choose photos for this room
+                </p>
+                <span className="text-[11px] text-[#9A917D] font-mono-num">
+                    {safeSelectedIds.length}/{MAX_ROOM_PHOTOS} selected
+                </span>
+            </div>
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                {safePool.map((img) => {
+                    const selected = safeSelectedIds.includes(img.id);
+                    const isCover = coverId === img.id;
+                    return (
+                        <div
+                            key={img.id}
+                            onClick={() => onToggle(img.id)}
+                            className={`relative rounded-lg overflow-hidden aspect-square border-2 cursor-pointer transition ${
+                                selected
+                                    ? "border-[#C99A3D]"
+                                    : "border-transparent opacity-75 hover:opacity-100"
+                            }`}
+                        >
+                            <img src={img.src} alt="" className="w-full h-full object-cover" />
+                            {selected && (
+                                <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-[#C99A3D] flex items-center justify-center">
+                                    <Check size={10} className="text-white" />
+                                </div>
+                            )}
+                            {selected && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onSetCover(img.id);
+                                    }}
+                                    title="Set as this room's cover photo"
+                                    className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-white/90 flex items-center justify-center"
+                                >
+                                    <Star
+                                        size={11}
+                                        className={isCover ? "text-[#C99A3D] fill-[#C99A3D]" : "text-[#B3AB99]"}
+                                    />
+                                </button>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+/* ---------------------------------------------------------
    MAIN COMPONENT
 --------------------------------------------------------- */
 
 export default function CompleteListing() {
     const [step, setStep] = useState(0);
 
-    const [propertyType, setPropertyType] = useState<number>(1);
+    // FIX: was hardcoded to `1`, which submitted a possibly-nonexistent
+    // property_type_id if the real list didn't contain id 1. Now starts
+    // unselected and is validated before the vendor can continue.
+    const [propertyType, setPropertyType] = useState<number | null>(null);
     const [propertyTypes, setPropertyTypes] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const backendUrl = import.meta.env.VITE_BACKEND_URL as string;
     const [propertyId, setPropertyId] = useState<number | string | null>(null);
 
-    // FIX (Bug 2): property-level photos (step 3) — a single unified list.
-    // Removed the separate `images: File[]` state that used to exist alongside
-    // `previewImages`; that duplication is exactly what caused the two states
-    // to fall out of sync after hydration.
+    // Property-level photos (Step 3) — a single unified list. This is now
+    // also the SOURCE POOL that the Rooms step (Step 6) picks from.
     const [previewImages, setPreviewImages] = useState<PropertyImagePreview[]>([]);
     const navigate = useNavigate();
 
     const [amenityList, setAmenityList] = useState<any[]>([]);
 
-    const [details, setDetails] = useState<PropertyDetails>({
-        property_name: "Saffron Bagh Heritage Stay",
-        star_rating: 4,
-        contact_name: "Anjali Rathore",
-        contact_number: "+91 98765 43210",
-        email: "stay@saffronbagh.com",
-        website: "www.saffronbagh.com",
-        check_in: "13:00",
-        check_out: "11:00",
-        total_rooms: 9,
-        description:
-            "A restored 1920s haveli wrapped around a courtyard garden, fifteen minutes from the old city. Stone jaali screens, hand-block linens, and a rooftop that catches the evening light.",
-    });
-
-    const [address, setAddress] = useState<PropertyAddress>({
-        country: "India",
-        state: "Rajasthan",
-        city: "Udaipur",
-        area: "Hanuman Ghat",
-        address: "14 Brahmpuri Lane, near Hanuman Ghat",
-        pincode: "313001",
-        landmark: "200m from Lake Pichola",
-        latitude: "24.5828",
-        longitude: "73.6797",
-    });
-
-    const [amenities, setAmenities] = useState<number[]>([1, 2, 3, 6, 8]);
-
-    const [policies, setPolicies] = useState<Policies>({
-        cancellation_policy:
-            "Free cancellation up to 48 hours before check-in. Inside 48 hours, the first night is charged.",
-        house_rules: "Quiet hours from 10 PM to 7 AM. Please remove footwear in the courtyard rooms.",
-        refund_policy: "Refunds are processed to the original payment method within 5–7 business days.",
-    });
-
-    const [rules, setRules] = useState<Rules>({
-        smoking_allowed: false,
-        pets_allowed: false,
-        parties_allowed: false,
-        couples_allowed: true,
-        children_allowed: true,
-    });
-
-    const [rooms, setRooms] = useState<Room[]>([DEMO_ROOM(0), DEMO_DORM_ROOM(), DEMO_VILLA_ROOM()]);
+    // FIX: was pre-filled with fake demo content ("Saffron Bagh Heritage
+    // Stay", a real-looking address, 5 pre-checked amenities, 3 fully
+    // configured rooms). A vendor who didn't carefully edit every field
+    // could publish that placeholder content as their real listing.
+    const [details, setDetails] = useState<PropertyDetails>({ ...BLANK_DETAILS });
+    const [address, setAddress] = useState<PropertyAddress>({ ...BLANK_ADDRESS });
+    const [amenities, setAmenities] = useState<number[]>([]);
+    const [policies, setPolicies] = useState<Policies>({ ...BLANK_POLICIES });
+    const [rules, setRules] = useState<Rules>({ ...BLANK_RULES });
+    const [rooms, setRooms] = useState<Room[]>([]);
 
     /* -----------------------------------------------------
        PROPERTY TYPE + AMENITY LOOKUPS
@@ -520,10 +603,8 @@ export default function CompleteListing() {
 
             if (data.property) {
                 setDetails(data.property);
-                // FIX (Bug 1): the saved property type was never being applied to
-                // `propertyType`, so it silently stayed at its initial value (1).
-                // Re-hydrate it here so re-submitting basic info sends the correct
-                // property_type_id instead of a stale/default one.
+                // The saved property type must be re-applied to `propertyType`,
+                // otherwise re-submitting basic info sends a stale/default id.
                 if (data.property.property_type_id) {
                     setPropertyType(Number(data.property.property_type_id));
                 }
@@ -538,6 +619,8 @@ export default function CompleteListing() {
 
             // Property-level photos — these already exist on the server, so they
             // have no `file` attached (only newly-picked local files get one).
+            // These ids are the real property_images.id values the Rooms step
+            // needs for its photo picker.
             if (data.images) {
                 const preview: PropertyImagePreview[] = data.images.map((img: any) => ({
                     id: img.id,
@@ -547,44 +630,49 @@ export default function CompleteListing() {
                 setPreviewImages(preview);
             }
 
-            // Rooms — backend returns flat rows joined with price/beds/dorm_beds/images
+            // Rooms — backend returns flat rows joined with price/beds/dorm_beds,
+            // and `images` here is the room_property_images link rows joined
+            // back to property_images (see listing.controller.js getIncompleteListing).
             if (data.rooms && Array.isArray(data.rooms)) {
-                const hydratedRooms: Room[] = data.rooms.map((room: any) => ({
-                    id: room.id,
-                    room_category: room.room_category ?? "private",
-                    room_name: room.room_name,
-                    room_type: room.room_type,
-                    max_adults: Number(room.max_adults) || 0,
-                    max_children: Number(room.max_children) || 0,
-                    total_rooms: Number(room.total_rooms) || 0,
-                    available_rooms: Number(room.available_rooms) || 0,
-                    room_size: Number(room.room_size) || 0,
-                    room_size_unit: room.room_size_unit ?? "sqft",
-                    private_bathroom: !!room.private_bathroom,
-                    balcony: !!room.balcony,
-                    air_conditioning: !!room.air_conditioning,
-                    price: Number(room.price) || 0,
-                    weekend_price: Number(room.weekend_price ?? room.price) || 0,
-                    extra_guest_price: Number(room.extra_guest_price) || 0,
-                    tax: Number(room.tax) || 0,
-                    beds: (room.beds || []).map((b: any) => ({
-                        id: b.id,
-                        bed_type: b.bed_type,
-                        quantity: b.quantity,
-                    })),
-                    dorm_beds: (room.dorm_beds || []).map((b: any) => ({
-                        id: b.id,
-                        bed_label: b.bed_label,
-                        bed_type: b.bed_type,
-                        status: b.status,
-                        price: Number(b.price) || 0,
-                    })),
-                    images: (room.images || []).map((img: any) => ({
-                        id: img.id,
-                        src: `${backendUrl}/uploads/properties/${data.property_id}/rooms/${img.image}`,
-                        is_cover: !!img.is_cover,
-                    })),
-                }));
+                const hydratedRooms: Room[] = data.rooms.map((room: any) => {
+                    const linkedImages = room.images || [];
+                    const coverLink = linkedImages.find((img: any) => img.is_cover);
+                    return {
+                        id: room.id,
+                        room_category: room.room_category ?? "private",
+                        room_name: room.room_name,
+                        room_type: room.room_type,
+                        max_adults: Number(room.max_adults) || 0,
+                        max_children: Number(room.max_children) || 0,
+                        total_rooms: Number(room.total_rooms) || 0,
+                        available_rooms: Number(room.available_rooms) || 0,
+                        room_size: Number(room.room_size) || 0,
+                        room_size_unit: room.room_size_unit ?? "sqft",
+                        private_bathroom: !!room.private_bathroom,
+                        balcony: !!room.balcony,
+                        air_conditioning: !!room.air_conditioning,
+                        price: Number(room.price) || 0,
+                        weekend_price: Number(room.weekend_price ?? room.price) || 0,
+                        extra_guest_price: Number(room.extra_guest_price) || 0,
+                        tax: Number(room.tax) || 0,
+                        beds: (room.beds || []).map((b: any) => ({
+                            id: b.id,
+                            bed_type: b.bed_type,
+                            quantity: b.quantity,
+                        })),
+                        dorm_beds: (room.dorm_beds || []).map((b: any) => ({
+                            id: b.id,
+                            bed_label: b.bed_label,
+                            bed_type: b.bed_type,
+                            status: b.status,
+                            price: Number(b.price) || 0,
+                        })),
+                        // Defensive: always arrays/nullable, never undefined —
+                        // this is what RoomPhotoPicker reads .length off of.
+                        image_ids: linkedImages.map((img: any) => img.property_image_id) ?? [],
+                        cover_image_id: coverLink ? coverLink.property_image_id : (linkedImages[0]?.property_image_id ?? null),
+                    };
+                });
                 setRooms(hydratedRooms);
             }
         } catch (error: any) {
@@ -604,10 +692,26 @@ export default function CompleteListing() {
     }, []);
 
     /* -----------------------------------------------------
+       STEP 0: PROPERTY TYPE
+    ----------------------------------------------------- */
+
+    const confirmPropertyType = () => {
+        if (propertyType === null) {
+            toast.error("Please select a property type to continue.");
+            return;
+        }
+        goNext();
+    };
+
+    /* -----------------------------------------------------
        STEP 1: BASIC INFO
     ----------------------------------------------------- */
 
     const saveBasicInformation = async () => {
+        if (propertyType === null) {
+            toast.error("Please go back and select a property type.");
+            return;
+        }
         try {
             const response = await axios.post(
                 `${backendUrl}/api/listing/basic-information`,
@@ -668,18 +772,18 @@ export default function CompleteListing() {
 
     /* -----------------------------------------------------
        STEP 3: PROPERTY PHOTOS
-       FIX (Bug 2): previewImages is now the single source of truth. Adding
-       files appends to whatever is already there (including hydrated
-       server images); removing just filters that one image out. Neither
-       operation rebuilds the whole list from a separate `images` array
-       anymore, so hydrated photos are never silently dropped.
+       previewImages is the single source of truth. Adding files appends to
+       whatever is already there (including hydrated server images);
+       removing just filters that one image out.
+       Cap raised to MAX_PROPERTY_PHOTOS (25) since this is now the whole
+       pool that rooms pick from, not a per-step limited upload.
     ----------------------------------------------------- */
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
-        if (previewImages.length + files.length > 5) {
-            toast.error("Maximum 5 images allowed.");
+        if (previewImages.length + files.length > MAX_PROPERTY_PHOTOS) {
+            toast.error(`Maximum ${MAX_PROPERTY_PHOTOS} images allowed.`);
             return;
         }
         const newItems: PropertyImagePreview[] = files.map((file) => ({
@@ -702,6 +806,17 @@ export default function CompleteListing() {
             }
             return filtered;
         });
+        // If a room had this photo selected, drop the reference so we never
+        // hold onto a dangling id (removing a property photo should not
+        // silently break a room's selection without the room UI reflecting it).
+        setRooms((rs) =>
+            rs.map((r) => {
+                if (!r.image_ids.includes(id)) return r;
+                const nextIds = r.image_ids.filter((imgId) => imgId !== id);
+                const nextCover = r.cover_image_id === id ? (nextIds[0] ?? null) : r.cover_image_id;
+                return { ...r, image_ids: nextIds, cover_image_id: nextCover };
+            })
+        );
     };
 
     const setCoverImage = (id: string | number) => {
@@ -719,7 +834,7 @@ export default function CompleteListing() {
             const newFiles = previewImages.filter((img) => img.file);
 
             // Everything is already saved from a previous session — nothing new
-            // to upload, just move on.
+            // to upload, ids are already real, just move on.
             if (newFiles.length === 0) {
                 goNext();
                 return;
@@ -736,6 +851,27 @@ export default function CompleteListing() {
             });
             if (response.data.success) {
                 toast.success(response.data.message);
+
+                // IMPORTANT: swap local blob-url images for the server's real
+                // rows (real property_images.id + filename). Rooms in Step 7
+                // reference these ids directly, so we can't keep using the
+                // temporary local `uid()` ids past this point. The backend now
+                // returns the FULL current image list (old + new) here — see
+                // savePropertyImages in the controller — so this correctly
+                // replaces local state with authoritative server ids without
+                // losing any previously-saved photos.
+                if (response.data.images) {
+                    previewImages.forEach((img) => {
+                        if (img.file) URL.revokeObjectURL(img.src);
+                    });
+                    const preview: PropertyImagePreview[] = response.data.images.map((img: any) => ({
+                        id: img.id,
+                        src: `${backendUrl}/uploads/properties/${propertyId}/${img.image}`,
+                        is_cover: !!img.is_cover,
+                    }));
+                    setPreviewImages(preview);
+                }
+
                 goNext();
             }
         } catch (error: any) {
@@ -798,6 +934,8 @@ export default function CompleteListing() {
 
     /* -----------------------------------------------------
        STEP 6: ROOMS
+       Rooms no longer upload their own images — they pick 1-5 from
+       `previewImages` (the property's own photo pool from Step 3).
     ----------------------------------------------------- */
 
     const updateRoom = (id: string | number, patch: Partial<Room>) =>
@@ -806,7 +944,7 @@ export default function CompleteListing() {
     const addRoom = (category: RoomCategory = "private") =>
         setRooms((rs) => [
             ...rs,
-            category === "dorm" ? DEMO_DORM_ROOM() : category === "whole_property" ? DEMO_VILLA_ROOM() : DEMO_ROOM(rs.length),
+            category === "dorm" ? NEW_DORM_ROOM() : category === "whole_property" ? NEW_VILLA_ROOM() : NEW_PRIVATE_ROOM(),
         ]);
 
     const removeRoom = (id: string | number) => setRooms((rs) => rs.filter((r) => r.id !== id));
@@ -845,7 +983,7 @@ export default function CompleteListing() {
                                 bed_label: `Bed ${r.dorm_beds.length + 1}`,
                                 bed_type: "Bunk - Bottom",
                                 status: "available" as DormBedStatus,
-                                price: r.price || 900,
+                                price: r.price || 0,
                             },
                         ],
                     }
@@ -867,44 +1005,30 @@ export default function CompleteListing() {
             )
         );
 
-    // Adds real File objects (selected from disk) as pending room images
-    const handleRoomImageSelect = (roomId: string | number, e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
-        if (!files.length) return;
+    // Toggle a property photo in/out of a room's selection (max 5 per room).
+    const toggleRoomImage = (roomId: string | number, imageId: string | number) => {
         setRooms((rs) =>
             rs.map((r) => {
                 if (r.id !== roomId) return r;
-                const newImages: RoomImage[] = files.map((file) => ({
-                    id: uid(),
-                    file,
-                    src: URL.createObjectURL(file),
-                    is_cover: r.images.length === 0,
-                }));
-                return { ...r, images: [...r.images, ...newImages] };
+                const already = r.image_ids.includes(imageId);
+                let nextIds: (string | number)[];
+                if (already) {
+                    nextIds = r.image_ids.filter((id) => id !== imageId);
+                } else {
+                    if (r.image_ids.length >= MAX_ROOM_PHOTOS) {
+                        toast.error(`Maximum ${MAX_ROOM_PHOTOS} photos per room.`);
+                        return r;
+                    }
+                    nextIds = [...r.image_ids, imageId];
+                }
+                const nextCover = nextIds.includes(r.cover_image_id as any) ? r.cover_image_id : (nextIds[0] ?? null);
+                return { ...r, image_ids: nextIds, cover_image_id: nextCover };
             })
         );
-        // allow re-selecting the same file again later
-        e.target.value = "";
     };
 
-    const removeRoomImage = (roomId: string | number, imgId: string | number) =>
-        setRooms((rs) =>
-            rs.map((r) => {
-                if (r.id !== roomId) return r;
-                const removed = r.images.find((im) => im.id === imgId);
-                if (removed?.file) URL.revokeObjectURL(removed.src); // avoid leaking blob urls
-                const filtered = r.images.filter((im) => im.id !== imgId);
-                if (filtered.length && !filtered.some((im) => im.is_cover)) filtered[0].is_cover = true;
-                return { ...r, images: filtered };
-            })
-        );
-
-    const setRoomCoverImage = (roomId: string | number, imgId: string | number) =>
-        setRooms((rs) =>
-            rs.map((r) =>
-                r.id === roomId ? { ...r, images: r.images.map((im) => ({ ...im, is_cover: im.id === imgId })) } : r
-            )
-        );
+    const setRoomCoverImage = (roomId: string | number, imageId: string | number) =>
+        setRooms((rs) => rs.map((r) => (r.id === roomId ? { ...r, cover_image_id: imageId } : r)));
 
     const saveRooms = async () => {
         try {
@@ -912,31 +1036,27 @@ export default function CompleteListing() {
                 toast.error("Add at least one room.");
                 return;
             }
+            for (const r of rooms) {
+                if (!r.room_name?.trim()) {
+                    toast.error("Every room needs a name.");
+                    return;
+                }
+                if (r.image_ids.length === 0) {
+                    toast.error(`"${r.room_name || "A room"}" needs at least one photo selected.`);
+                    return;
+                }
+            }
 
-            const formData = new FormData();
-            formData.append("property_id", String(propertyId)); // must be appended first — multer destination() reads it
+            // Plain JSON now — no FormData, no files. Rooms only carry
+            // references (image_ids / cover_image_id) into photos that were
+            // already uploaded in Step 3.
+            const payload = {
+                property_id: propertyId,
+                rooms: rooms.map(({ id, ...rest }) => rest),
+            };
 
-            const roomsMeta = rooms.map(({ images: roomImages, ...rest }) => ({
-                ...rest,
-                cover_index: Math.max(
-                    0,
-                    roomImages.findIndex((img) => img.is_cover)
-                ),
-            }));
-            formData.append("rooms", JSON.stringify(roomsMeta));
-
-            // field names room_<index>_images match the .any() middleware grouping logic on the backend
-            rooms.forEach((r, idx) => {
-                r.images.forEach((img) => {
-                    if (img.file) {
-                        formData.append(`room_${idx}_images`, img.file);
-                    }
-                });
-            });
-
-            const response = await axios.post(`${backendUrl}/api/listing/rooms`, formData, {
+            const response = await axios.post(`${backendUrl}/api/listing/rooms`, payload, {
                 withCredentials: true,
-                headers: { "Content-Type": "multipart/form-data" },
             });
 
             if (response.data.success) {
@@ -978,6 +1098,9 @@ export default function CompleteListing() {
 
     const handleNext = async () => {
         switch (step) {
+            case 0:
+                confirmPropertyType();
+                break;
             case 1:
                 await saveBasicInformation();
                 break;
@@ -1094,23 +1217,27 @@ export default function CompleteListing() {
                         {step === 0 && (
                             <div>
                                 <StepHeader eyebrow="Step 1" title="What kind of place is this?" sub="Pick the closest match — you can refine details next." />
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6">
-                                    {propertyTypes.map((t) => {
-                                        const Icon = propertyIcons[t.name];
-                                        const active = propertyType === t.id;
-                                        return (
-                                            <button
-                                                key={t.id}
-                                                onClick={() => setPropertyType(t.id)}
-                                                className={`text-left rounded-xl border p-4 transition ${active ? "border-[#2F6F62] bg-[#2F6F62]/6 ring-1 ring-[#2F6F62]" : "border-[#E5DECF] hover:border-[#C99A3D]"
-                                                    }`}
-                                            >
-                                                {Icon && <Icon size={22} className={active ? "text-[#2F6F62]" : "text-[#6B6354]"} />}
-                                                <p className="mt-2.5 text-[14px] font-semibold text-[#1E2A23]">{t.name}</p>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                                {loading ? (
+                                    <p className="text-[13px] text-[#9A917D] mt-6">Loading property types…</p>
+                                ) : (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6">
+                                        {propertyTypes.map((t) => {
+                                            const Icon = propertyIcons[t.name];
+                                            const active = propertyType === t.id;
+                                            return (
+                                                <button
+                                                    key={t.id}
+                                                    onClick={() => setPropertyType(t.id)}
+                                                    className={`text-left rounded-xl border p-4 transition ${active ? "border-[#2F6F62] bg-[#2F6F62]/6 ring-1 ring-[#2F6F62]" : "border-[#E5DECF] hover:border-[#C99A3D]"
+                                                        }`}
+                                                >
+                                                    {Icon && <Icon size={22} className={active ? "text-[#2F6F62]" : "text-[#6B6354]"} />}
+                                                    <p className="mt-2.5 text-[14px] font-semibold text-[#1E2A23]">{t.name}</p>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -1224,46 +1351,53 @@ export default function CompleteListing() {
 
                         {/* STEP 3: PHOTOS */}
                         {step === 3 && (
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                                {previewImages.map((image) => (
-                                    <div key={image.id} className="relative rounded-xl overflow-hidden border group">
-                                        <img src={image.src} className="w-full h-40 object-cover" alt="" />
-                                        {image.is_cover && (
-                                            <span className="absolute top-2 left-2 bg-[#1E2A23] text-white text-[9px] font-semibold uppercase px-2 py-1 rounded-full">
-                                                Cover
-                                            </span>
-                                        )}
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/35 transition flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
-                                            {!image.is_cover && (
+                            <div>
+                                <StepHeader
+                                    eyebrow="Step 4"
+                                    title="Show the property"
+                                    sub={`Upload every photo you have — up to ${MAX_PROPERTY_PHOTOS}. You'll assign 1-5 of these to each room in Step 7.`}
+                                />
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-6">
+                                    {previewImages.map((image) => (
+                                        <div key={image.id} className="relative rounded-xl overflow-hidden border group">
+                                            <img src={image.src} className="w-full h-40 object-cover" alt="" />
+                                            {image.is_cover && (
+                                                <span className="absolute top-2 left-2 bg-[#1E2A23] text-white text-[9px] font-semibold uppercase px-2 py-1 rounded-full">
+                                                    Cover
+                                                </span>
+                                            )}
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/35 transition flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
+                                                {!image.is_cover && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setCoverImage(image.id)}
+                                                        className="bg-white text-[#1E2A23] p-1.5 rounded-full"
+                                                        title="Set as cover"
+                                                    >
+                                                        <Check size={13} />
+                                                    </button>
+                                                )}
                                                 <button
                                                     type="button"
-                                                    onClick={() => setCoverImage(image.id)}
-                                                    className="bg-white text-[#1E2A23] p-1.5 rounded-full"
-                                                    title="Set as cover"
+                                                    onClick={() => removeImage(image.id)}
+                                                    className="bg-white text-[#B3452E] p-1.5 rounded-full"
+                                                    title="Remove"
                                                 >
-                                                    <Check size={13} />
+                                                    <Trash2 size={13} />
                                                 </button>
-                                            )}
-                                            <button
-                                                type="button"
-                                                onClick={() => removeImage(image.id)}
-                                                className="bg-white text-[#B3452E] p-1.5 rounded-full"
-                                                title="Remove"
-                                            >
-                                                <Trash2 size={13} />
-                                            </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                                {previewImages.length < 5 && (
-                                    <label className="border-2 border-dashed rounded-xl h-40 flex items-center justify-center cursor-pointer">
-                                        <div className="text-center">
-                                            <Plus size={28} />
-                                            <p>Add Photos</p>
-                                        </div>
-                                        <input type="file" multiple accept="image/*" hidden onChange={handleImageSelect} />
-                                    </label>
-                                )}
+                                    ))}
+                                    {previewImages.length < MAX_PROPERTY_PHOTOS && (
+                                        <label className="border-2 border-dashed rounded-xl h-40 flex items-center justify-center cursor-pointer">
+                                            <div className="text-center">
+                                                <Plus size={28} />
+                                                <p>Add Photos</p>
+                                            </div>
+                                            <input type="file" multiple accept="image/*" hidden onChange={handleImageSelect} />
+                                        </label>
+                                    )}
+                                </div>
                             </div>
                         )}
 
@@ -1323,54 +1457,21 @@ export default function CompleteListing() {
                         {/* STEP 6: ROOMS */}
                         {step === 6 && (
                             <div>
-                                <StepHeader eyebrow="Step 7" title="Rooms & pricing" sub="Private rooms, dorm beds, or the entire property — each sells differently." />
+                                <StepHeader eyebrow="Step 7" title="Rooms & pricing" sub="Private rooms, dorm beds, or the entire property — each sells differently. Pick photos for each room from what you uploaded in Step 4." />
                                 <div className="space-y-5 mt-6">
                                     {rooms.map((r, idx) => (
                                         <div key={r.id} className="rounded-xl border border-[#E5DECF] overflow-hidden">
-                                            {/* room images strip */}
-                                            <div className="flex gap-2 p-3 bg-[#F9F6EF] overflow-x-auto">
-                                                {r.images.map((img) => (
-                                                    <div key={img.id} className="relative group flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden border border-[#E5DECF]">
-                                                        <img src={img.src} className="w-full h-full object-cover" alt="" />
-                                                        {img.is_cover && (
-                                                            <span className="absolute top-0.5 left-0.5 bg-[#1E2A23] text-white text-[8px] font-semibold uppercase px-1.5 py-0.5 rounded-full">
-                                                                Cover
-                                                            </span>
-                                                        )}
-                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
-                                                            {!img.is_cover && (
-                                                                <button onClick={() => setRoomCoverImage(r.id, img.id)} className="bg-white text-[#1E2A23] p-1 rounded-full">
-                                                                    <Check size={10} />
-                                                                </button>
-                                                            )}
-                                                            <button onClick={() => removeRoomImage(r.id, img.id)} className="bg-white text-[#B3452E] p-1 rounded-full">
-                                                                <X size={10} />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                <label className="flex-shrink-0 w-20 h-16 rounded-lg border-2 border-dashed border-[#DBD3C4] flex items-center justify-center text-[#9A917D] hover:border-[#C99A3D] hover:text-[#C99A3D] transition cursor-pointer">
-                                                    <Plus size={16} />
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        multiple
-                                                        hidden
-                                                        onChange={(e) => handleRoomImageSelect(r.id, e)}
-                                                    />
-                                                </label>
-                                            </div>
-
                                             <div className="p-5">
                                                 <div className="flex items-start justify-between gap-3 mb-4">
                                                     <div>
                                                         <input
-                                                            className="font-display text-[17px] text-[#1E2A23] bg-transparent outline-none border-b border-transparent focus:border-[#2F6F62]"
+                                                            placeholder="Room name"
+                                                            className="font-display text-[17px] text-[#1E2A23] bg-transparent outline-none border-b border-transparent focus:border-[#2F6F62] placeholder-[#B3AB99]"
                                                             value={r.room_name}
                                                             onChange={(e) => updateRoom(r.id, { room_name: e.target.value })}
                                                         />
                                                         <p className="text-[12px] text-[#9A917D] font-mono-num">
-                                                            Room {String(idx + 1).padStart(2, "0")} · {r.room_type}
+                                                            Room {String(idx + 1).padStart(2, "0")} · {r.room_type || "Untitled type"}
                                                         </p>
                                                     </div>
                                                     {rooms.length > 1 && (
@@ -1532,6 +1633,17 @@ export default function CompleteListing() {
                                                         Guests book the whole property for their stay — no other room types are sold alongside this one for the same dates.
                                                     </div>
                                                 )}
+
+                                                {/* Room photo picker — selects from the property's own photo pool */}
+                                                <div className="mt-5 pt-4 border-t border-dashed border-[#E5DECF]">
+                                                    <RoomPhotoPicker
+                                                        pool={previewImages}
+                                                        selectedIds={r.image_ids}
+                                                        coverId={r.cover_image_id}
+                                                        onToggle={(imageId) => toggleRoomImage(r.id, imageId)}
+                                                        onSetCover={(imageId) => setRoomCoverImage(r.id, imageId)}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -1612,11 +1724,11 @@ export default function CompleteListing() {
                 <aside className="lg:sticky lg:top-[76px] h-fit">
                     <p className="text-[11px] tracking-[0.18em] uppercase text-[#9A917D] font-semibold mb-3">Guest preview</p>
                     <div className="bg-white rounded-2xl border border-[#E5DECF] overflow-hidden">
-                        <div className="relative aspect-[4/3]">
+                        <div className="relative aspect-[4/3] bg-[#EFE9DC]">
                             {coverImage && <img src={coverImage.src} className="w-full h-full object-cover" alt="" />}
                             <span className="absolute top-3 left-3 bg-white/95 backdrop-blur text-[11px] font-semibold text-[#1E2A23] px-2.5 py-1 rounded-full flex items-center gap-1">
                                 {SelectedIcon && <SelectedIcon size={12} />}
-                                {selectedType?.name}
+                                {selectedType?.name || "Select a type"}
                             </span>
                         </div>
                         <div className="p-5">
@@ -1628,17 +1740,22 @@ export default function CompleteListing() {
                                 </span>
                             </div>
                             <p className="text-[12.5px] text-[#9A917D] mt-1 flex items-center gap-1">
-                                <MapPin size={12} /> {address.area}, {address.city}
+                                <MapPin size={12} /> {address.area || "Area"}, {address.city || "City"}
                             </p>
-                            <p className="text-[13px] text-[#6B6354] mt-3 leading-relaxed line-clamp-3">{details.description}</p>
+                            <p className="text-[13px] text-[#6B6354] mt-3 leading-relaxed line-clamp-3">{details.description || "No description yet."}</p>
 
+                            {/* FIX: was matching against a hardcoded local AMENITY_LIST that had
+                                no relation to the real fetched amenityList/ids from the backend,
+                                so the preview could show the wrong name/icon for whatever the
+                                vendor actually selected in Step 5. Now reads from amenityList. */}
                             <div className="flex flex-wrap gap-1.5 mt-4">
                                 {amenities.slice(0, 4).map((id) => {
-                                    const a = AMENITY_LIST.find((x) => x.id === id);
+                                    const a = amenityList.find((x) => x.id === id);
                                     if (!a) return null;
+                                    const AmenityIcon = amenityIcons[a.icon] || ShieldCheck;
                                     return (
                                         <span key={id} className="text-[11px] bg-[#F5F2EA] text-[#6B6354] px-2 py-1 rounded-full flex items-center gap-1">
-                                            <a.icon size={11} /> {a.name}
+                                            <AmenityIcon size={11} /> {a.name}
                                         </span>
                                     );
                                 })}
